@@ -11,9 +11,9 @@ public class Permission : Enumeration
     public static readonly Permission ChangeUserStatus = new Permission(5, "ChangeUserStatus");
     public static readonly Permission ChangeUserRole = new Permission(6, "ChangeUserRole");
     
-    public static readonly Permission ViewContacts = new Permission(7, "ViewContacts");
-    public static readonly Permission EditContacts = new Permission(8, "EditContacts");
-    public static readonly Permission DeleteContacts = new Permission(9, "DeleteContacts");
+    public static readonly Permission ViewContracts = new Permission(7, "ViewContracts");
+    public static readonly Permission EditContracts = new Permission(8, "EditContracts");
+    public static readonly Permission DeleteContracts = new Permission(9, "DeleteContracts");
     public static readonly Permission CreateContracts = new Permission(10, "CreateContracts");
     public static readonly Permission ChangeContractStatus = new Permission(11, "ChangeContractStatus");
     

@@ -1,4 +1,5 @@
 using UserService.Domain.Common;
+using UserService.Domain.DomainEvents;
 using UserService.Domain.Permissions;
 using UserService.Domain.Roles;
 
@@ -24,6 +25,8 @@ public class User : Entity
         Email = new Email(email);
         PhoneNumber = new PhoneNumber(phoneNumber);
         SetPasswordHash(passwordHash);
+        
+        AddDomainEvent(new UserCreatedDomainEvent(this));
     }
 
     public void Activate()
@@ -35,6 +38,7 @@ public class User : Entity
             throw new InvalidOperationException("User is already active.");
         
         IsActive = true;
+        AddDomainEvent(new UserActivatedDomainEvent(this));
     }
 
     public void Deactivate()
@@ -43,14 +47,19 @@ public class User : Entity
             throw new InvalidOperationException("User is not active.");
         
         IsActive = false;
+        AddDomainEvent(new UserDeactivatedDomainEvent(this));
     }
 
     public void SetPasswordHash(string passwordHash)
     {
         if (string.IsNullOrWhiteSpace(passwordHash))
             throw new ArgumentException("PasswordHash cannot be null.");
-        
+
+        if (PasswordHash == passwordHash)
+            throw new InvalidOperationException("New password cant be similar to old password.");
+            
         PasswordHash = passwordHash;
+        AddDomainEvent(new UserPasswordChangedDomainEvent(this));
     }
     
     public void VerifyEmail()
@@ -59,6 +68,7 @@ public class User : Entity
             throw new InvalidOperationException("Email is already verified.");
         
         EmailVerified = true;
+        AddDomainEvent(new UserEmailVerifiedDomainEvent(this));
     }
 
     public void AddPassport(
@@ -86,11 +96,17 @@ public class User : Entity
             birthDate);
     }
 
+    public void ChangeRole(Role role)
+    {
+        if(Equals(role, Role))
+            return;
+            
+        Role = role;
+        AddDomainEvent(new UserRoleWasChanged(this));
+    }
+
     private bool Can(Permission permission)
     {
-        if (Role is null)
-            throw new InvalidOperationException("User has no role assigned.");
-
         return Role.HasPermission(permission);
     }
     
@@ -102,6 +118,6 @@ public class User : Entity
         if(this == targetUser)
             return true;
         
-        return Can(Permission.DeleteContacts);
+        return Can(Permission.DeleteUsers);
     }
 }

@@ -1,6 +1,6 @@
 using MediatR;
 using UserService.Domain.Users;
 
-namespace UserService.Domain.Events;
+namespace UserService.Domain.DomainEvents;
 
-public class UserCreatedDomainEvent(User user) : INotification;
+public record UserCreatedDomainEvent(User User) : INotification;

@@ -20,9 +20,9 @@ public class Role : Enumeration
             Permission.EditRent,
             Permission.DeleteRent,
             Permission.ChangeRentStatus,
-            Permission.ViewContacts,
-            Permission.EditContacts,
-            Permission.DeleteContacts,
+            Permission.ViewContracts,
+            Permission.EditContracts,
+            Permission.DeleteContracts,
             Permission.CreateContracts,
             Permission.ChangeContractStatus
         ];
