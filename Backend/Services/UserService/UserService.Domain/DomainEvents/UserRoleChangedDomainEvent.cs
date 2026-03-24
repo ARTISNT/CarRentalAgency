@@ -4,4 +4,4 @@ using UserService.Domain.Users;
 
 namespace UserService.Domain.DomainEvents;
 
-public record UserRoleWasChanged(User User) : INotification;
+public record UserRoleChangedDomainEvent(Guid Id, string NewRole, DateTime OccuredOn) : INotification;

@@ -3,4 +3,4 @@ using UserService.Domain.Users;
 
 namespace UserService.Domain.DomainEvents;
 
-public record UserPasswordChangedDomainEvent(User User) :  INotification;
+public record UserPasswordChangedDomainEvent(Guid Id, string NewPasswordHash, DateTime OccuredOn) :  INotification;

@@ -3,4 +3,4 @@ using UserService.Domain.Users;
 
 namespace UserService.Domain.DomainEvents;
 
-public record UserCreatedDomainEvent(User User) : INotification;
+public record UserRegisteredDomainEvent(Guid Id, DateTime OccuredOn) : INotification;

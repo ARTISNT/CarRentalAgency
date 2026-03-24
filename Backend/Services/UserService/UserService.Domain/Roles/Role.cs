@@ -62,4 +62,6 @@ public class Role : Enumeration
 
     public bool HasPermission(Permission permission)
         => _permissions.Contains(permission);
+    
+    public override string ToString() => Name;
 }

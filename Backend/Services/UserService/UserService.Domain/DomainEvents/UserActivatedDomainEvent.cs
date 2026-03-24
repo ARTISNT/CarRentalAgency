@@ -1,6 +1,5 @@
 using MediatR;
-using UserService.Domain.Users;
 
 namespace UserService.Domain.DomainEvents;
 
-public record UserActivatedDomainEvent(User User) : INotification;
+public record UserActivatedDomainEvent(Guid Id, DateTime OccuredOn) : INotification;

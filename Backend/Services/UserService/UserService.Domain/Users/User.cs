@@ -9,8 +9,8 @@ public class User : Entity
 {
     public Guid Id { get; private set; }
     public bool IsActive { get; private set; } 
-    public string PasswordHash { get; private set; }
     public bool EmailVerified { get; private set; }
+    public Password Password { get; private set; }
     public PhoneNumber PhoneNumber { get; private set; }
     public Email Email { get; private set; }
     public Passport Passport { get; private set; }
@@ -18,15 +18,27 @@ public class User : Entity
     
     private User() {}
 
-    public User(string phoneNumber, string email, string passwordHash)
+    private User(PhoneNumber phoneNumber, Email email, Password password)
     {
         Role = Role.Client;
         Id = Guid.NewGuid();
-        Email = new Email(email);
-        PhoneNumber = new PhoneNumber(phoneNumber);
-        SetPasswordHash(passwordHash);
+        Email = email;
+        PhoneNumber = phoneNumber;
+        Password = password;
+    }
+
+    public static User Register(string rawPhoneNumber, string rawEmail, string rawPassword,
+        IPasswordProcessor passwordProcessor)
+    {
+        var password =  Password.Create(rawPassword, passwordProcessor);
+        var email = new Email(rawEmail);
+        var phoneNumber = new PhoneNumber(rawPhoneNumber);
         
-        AddDomainEvent(new UserCreatedDomainEvent(this));
+        var user = new User(phoneNumber, email, password);
+
+        user.AddDomainEvent(new UserRegisteredDomainEvent(user.Id, DateTime.UtcNow));
+        
+        return user;
     }
 
     public void Activate()
@@ -38,7 +50,7 @@ public class User : Entity
             throw new InvalidOperationException("User is already active.");
         
         IsActive = true;
-        AddDomainEvent(new UserActivatedDomainEvent(this));
+        AddDomainEvent(new UserActivatedDomainEvent(Id, DateTime.UtcNow));
     }
 
     public void Deactivate()
@@ -47,19 +59,18 @@ public class User : Entity
             throw new InvalidOperationException("User is not active.");
         
         IsActive = false;
-        AddDomainEvent(new UserDeactivatedDomainEvent(this));
+        AddDomainEvent(new UserDeactivatedDomainEvent(Id,  DateTime.UtcNow));
     }
 
-    public void SetPasswordHash(string passwordHash)
+    public void SetPassword(string rawPassword, IPasswordProcessor passwordProcessor)
     {
-        if (string.IsNullOrWhiteSpace(passwordHash))
-            throw new ArgumentException("PasswordHash cannot be null.");
-
-        if (PasswordHash == passwordHash)
+        var password = Password.Create(rawPassword,  passwordProcessor);
+        
+        if (Equals(Password, password))
             throw new InvalidOperationException("New password cant be similar to old password.");
-            
-        PasswordHash = passwordHash;
-        AddDomainEvent(new UserPasswordChangedDomainEvent(this));
+
+        Password = password;
+        AddDomainEvent(new UserPasswordChangedDomainEvent(Id, Password.Hash, DateTime.UtcNow));
     }
     
     public void VerifyEmail()
@@ -68,7 +79,7 @@ public class User : Entity
             throw new InvalidOperationException("Email is already verified.");
         
         EmailVerified = true;
-        AddDomainEvent(new UserEmailVerifiedDomainEvent(this));
+        AddDomainEvent(new UserEmailVerifiedDomainEvent(Id,  DateTime.UtcNow));
     }
 
     public void AddPassport(
@@ -102,7 +113,7 @@ public class User : Entity
             return;
             
         Role = role;
-        AddDomainEvent(new UserRoleWasChanged(this));
+        AddDomainEvent(new UserRoleChangedDomainEvent(Id,  role.ToString(), DateTime.UtcNow));
     }
 
     private bool Can(Permission permission)
