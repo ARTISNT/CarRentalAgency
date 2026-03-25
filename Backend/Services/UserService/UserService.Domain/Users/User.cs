@@ -5,7 +5,7 @@ using UserService.Domain.Roles;
 
 namespace UserService.Domain.Users;
 
-public class User : Entity
+public class User : Entity, IAggregateRoot
 {
     public Guid Id { get; private set; }
     public bool IsActive { get; private set; } 
