@@ -19,6 +19,17 @@ public abstract class Enumeration
             .Select(f => f.GetValue(null))
             .Cast<T>();
 
+    public static T FromName<T>(string name) where T : Enumeration
+    {
+            var matchingItem = GetAll<T>().FirstOrDefault(item => 
+                string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase));
+        
+            if (matchingItem == null)
+                throw new InvalidOperationException($"'{name}' is not a valid name in {typeof(T)}");
+
+            return matchingItem;
+    }
+    
     public override bool Equals(object obj)
     {
         if (obj is not Enumeration otherValue)

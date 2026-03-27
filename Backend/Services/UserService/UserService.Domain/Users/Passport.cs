@@ -12,6 +12,9 @@ public class Passport : ValueObject
    public DateTime PassportIssueDate { get; private set; }
    public DateTime BirthDate { get; private set; }
    
+   public const int MaxFullNameLength = 40;
+   public const int MinFullNameLength = 1;
+   
    private Passport() { }
 
    public Passport(string passportNumber, string identityNumber, string name, string surname, string patronymic, 
@@ -31,6 +34,9 @@ public class Passport : ValueObject
       if (string.IsNullOrWhiteSpace(name))
          throw new ArgumentNullException(nameof(name));
       
+      if(name.Length is > MaxFullNameLength or < MinFullNameLength)
+         throw new ArgumentException("Name must be between 1 and " + MaxFullNameLength + " characters long.");
+      
       Name = name;
    }
 
@@ -38,6 +44,9 @@ public class Passport : ValueObject
    {
       if (string.IsNullOrWhiteSpace(surname))
          throw new ArgumentNullException(nameof(surname));
+      
+      if(surname.Length is > MaxFullNameLength or < MinFullNameLength)
+         throw new ArgumentException("Surname must be between 1 and " + MaxFullNameLength + " characters long.");
 
       Surname = surname;
    }
@@ -46,6 +55,9 @@ public class Passport : ValueObject
    {
       if (string.IsNullOrWhiteSpace(patronymic))
          throw new ArgumentNullException(nameof(patronymic));
+      
+      if(patronymic.Length is > MaxFullNameLength or < MinFullNameLength)
+         throw new ArgumentException("Patronymic must be between 1 and " + MaxFullNameLength + " characters long.");
       
       Patronymic = patronymic;
    }
