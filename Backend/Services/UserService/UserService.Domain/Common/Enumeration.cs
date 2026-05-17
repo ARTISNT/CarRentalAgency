@@ -42,6 +42,19 @@ public abstract class Enumeration
 
         return typeMatches && valueMatches;
     }
+    
+    public static bool operator ==(Enumeration left, Enumeration right)
+    {
+        if (left is null && right is null) return true;
+        if (left is null || right is null) return false;
 
+        return left.Equals(right);
+    }
+    
+    public static bool operator !=(Enumeration left, Enumeration right)
+    {
+        return !(left == right);
+    } 
+    
     public int CompareTo(object other) => Id.CompareTo(((Enumeration)other).Id);
 }

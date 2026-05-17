@@ -5,40 +5,27 @@ using UserService.Domain.Roles;
 
 namespace UserService.Domain.Users;
 
-public class User : Entity, IAggregateRoot
+public sealed class User : Entity, IAggregateRoot
 {
-    public Guid Id { get; private set; }
     public bool IsActive { get; private set; } 
     public bool EmailVerified { get; private set; }
     public Password Password { get; private set; }
     public PhoneNumber PhoneNumber { get; private set; }
     public Email Email { get; private set; }
-    public Passport Passport { get; private set; }
+    public Passport? Passport { get; private set; }
     public Role Role { get; private set; }
     
     private User() {}
 
-    private User(PhoneNumber phoneNumber, Email email, Password password)
+    public User(PhoneNumber phoneNumber, Email email, Password password)
     {
         Role = Role.Client;
         Id = Guid.NewGuid();
         Email = email;
         PhoneNumber = phoneNumber;
         Password = password;
-    }
-
-    public static User Register(string rawPhoneNumber, string rawEmail, string rawPassword,
-        IPasswordProcessor passwordProcessor)
-    {
-        var password =  Password.Create(rawPassword, passwordProcessor);
-        var email = new Email(rawEmail);
-        var phoneNumber = new PhoneNumber(rawPhoneNumber);
         
-        var user = new User(phoneNumber, email, password);
-
-        user.AddDomainEvent(new UserRegisteredDomainEvent(user.Id, DateTime.UtcNow));
-        
-        return user;
+        AddDomainEvent(new UserRegisteredDomainEvent(Id, DateTime.UtcNow));
     }
 
     public void Activate()
@@ -82,14 +69,7 @@ public class User : Entity, IAggregateRoot
         AddDomainEvent(new UserEmailVerifiedDomainEvent(Id,  DateTime.UtcNow));
     }
 
-    public void AddPassport(
-        string passportNumber,
-        string identityNumber,
-        string name,
-        string surname,
-        string patronymic,
-        DateTime issueDate,
-        DateTime birthDate)
+    public void AddPassport(Passport passport)
         { 
         if (Passport != null)
             throw new InvalidOperationException("Passport already exists.");
@@ -97,28 +77,22 @@ public class User : Entity, IAggregateRoot
         if (!EmailVerified)
             throw new InvalidOperationException("Email must be verified.");
 
-        Passport = new Passport(
-            passportNumber,
-            identityNumber,
-            name,
-            surname,
-            patronymic,
-            issueDate,
-            birthDate);
+        Passport = passport;
+        AddDomainEvent(new UserAddedPassportDomainEvent(Id, DateTime.UtcNow));
     }
 
     public void ChangeRole(Role role)
     {
-        if(Equals(role, Role))
+        if(Role == role)
             return;
             
         Role = role;
         AddDomainEvent(new UserRoleChangedDomainEvent(Id,  role.ToString(), DateTime.UtcNow));
     }
 
-    private bool Can(Permission permission)
+    private bool Can(Permissions.Permissions permissionS)
     {
-        return Role.HasPermission(permission);
+        return Role.HasPermission(permissionS);
     }
     
     public bool CanDelete(User targetUser)
@@ -129,6 +103,6 @@ public class User : Entity, IAggregateRoot
         if(this == targetUser)
             return true;
         
-        return Can(Permission.DeleteUsers);
+        return Can(Permissions.Permissions.DeleteUsers);
     }
 }

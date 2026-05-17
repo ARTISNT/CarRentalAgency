@@ -5,26 +5,26 @@ namespace UserService.Domain.Roles;
 
 public class Role : Enumeration
 {
-    private static IEnumerable<Permission> BaseManagerPermissions()
+    private static IEnumerable<Permissions.Permissions> BaseManagerPermissions()
     {
         return
         [
-            Permission.ViewUsers,
-            Permission.ViewCars,
-            Permission.EditCarsDetails,
-            Permission.DeleteCars,
-            Permission.CreateCars,
-            Permission.ChangeCarsStatus,
-            Permission.ViewRents,
-            Permission.CreateRent,
-            Permission.EditRent,
-            Permission.DeleteRent,
-            Permission.ChangeRentStatus,
-            Permission.ViewContracts,
-            Permission.EditContracts,
-            Permission.DeleteContracts,
-            Permission.CreateContracts,
-            Permission.ChangeContractStatus
+            Domain.Permissions.Permissions.ViewUsers,
+            Domain.Permissions.Permissions.ViewCars,
+            Domain.Permissions.Permissions.EditCarsDetails,
+            Domain.Permissions.Permissions.DeleteCars,
+            Domain.Permissions.Permissions.CreateCars,
+            Domain.Permissions.Permissions.ChangeCarsStatus,
+            Domain.Permissions.Permissions.ViewRents,
+            Domain.Permissions.Permissions.CreateRent,
+            Domain.Permissions.Permissions.EditRent,
+            Domain.Permissions.Permissions.DeleteRent,
+            Domain.Permissions.Permissions.ChangeRentStatus,
+            Domain.Permissions.Permissions.ViewContracts,
+            Domain.Permissions.Permissions.EditContracts,
+            Domain.Permissions.Permissions.DeleteContracts,
+            Domain.Permissions.Permissions.CreateContracts,
+            Domain.Permissions.Permissions.ChangeContractStatus
         ];
     }
 
@@ -35,33 +35,33 @@ public class Role : Enumeration
         new Role(1, "Admin",
             BaseManagerPermissions().Concat(new[]
             {
-                Permission.EditUsers,
-                Permission.DeleteUsers,
-                Permission.CreateUsers,
-                Permission.ChangeUserRole,
-                Permission.ChangeUserStatus
+                Domain.Permissions.Permissions.EditUsers,
+                Domain.Permissions.Permissions.DeleteUsers,
+                Domain.Permissions.Permissions.CreateUsers,
+                Domain.Permissions.Permissions.ChangeUserRole,
+                Domain.Permissions.Permissions.ChangeUserStatus
             }));
 
     public static readonly Role Client =
         new Role(3, "Client",
             new[]
             {
-                Permission.ViewCars,
-                Permission.CreateRent
+                Domain.Permissions.Permissions.ViewCars,
+                Domain.Permissions.Permissions.CreateRent
             });
 
-    private readonly HashSet<Permission> _permissions;
+    private readonly HashSet<Permissions.Permissions> _permissions;
 
-    public IReadOnlyCollection<Permission> Permissions => _permissions;
+    public IReadOnlyCollection<Permissions.Permissions> Permissions => _permissions;
 
-    private Role(int id, string name, IEnumerable<Permission> permissions)
+    private Role(int id, string name, IEnumerable<Permissions.Permissions> permissions)
         : base(id, name)
     {
-        _permissions = new HashSet<Permission>(permissions);
+        _permissions = new HashSet<Permissions.Permissions>(permissions);
     }
 
-    public bool HasPermission(Permission permission)
-        => _permissions.Contains(permission);
+    public bool HasPermission(Permissions.Permissions permissionS)
+        => _permissions.Contains(permissionS);
     
     public override string ToString() => Name;
 }

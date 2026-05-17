@@ -1,7 +1,5 @@
-using MediatR;
-using UserService.Domain.Roles;
-using UserService.Domain.Users;
+using UserService.Domain.Common;
 
 namespace UserService.Domain.DomainEvents;
 
-public record UserRoleChangedDomainEvent(Guid Id, string NewRole, DateTime OccuredOn) : INotification;
+public record UserRoleChangedDomainEvent(Guid Id, string NewRole, DateTime OccurredOn) : IDomainEvent;

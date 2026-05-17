@@ -1,6 +1,5 @@
-using MediatR;
-using UserService.Domain.Users;
+using UserService.Domain.Common;
 
 namespace UserService.Domain.DomainEvents;
 
-public record UserEmailVerifiedDomainEvent(Guid Id, DateTime OccuredOn ) : INotification;
+public record UserEmailVerifiedDomainEvent(Guid Id, DateTime OccurredOn ) : IDomainEvent;

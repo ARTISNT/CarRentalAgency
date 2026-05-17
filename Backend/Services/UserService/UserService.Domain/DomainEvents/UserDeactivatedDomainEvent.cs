@@ -1,6 +1,5 @@
-using MediatR;
-using UserService.Domain.Users;
+using UserService.Domain.Common;
 
 namespace UserService.Domain.DomainEvents;
 
-public record UserDeactivatedDomainEvent(Guid Id, DateTime OccuredOn) : INotification;
+public record UserDeactivatedDomainEvent(Guid Id, DateTime OccurredOn) : IDomainEvent;

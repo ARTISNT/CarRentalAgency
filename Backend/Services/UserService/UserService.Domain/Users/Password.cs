@@ -13,7 +13,7 @@ public class Password : ValueObject
 
     public static Password Create(string rawPassword, IPasswordProcessor hasher)
     {
-        if (!string.IsNullOrWhiteSpace(rawPassword))
+        if (string.IsNullOrWhiteSpace(rawPassword))
             throw new ArgumentNullException(nameof(rawPassword));
         
         if(rawPassword.Length is < 8 or > 30)
@@ -22,7 +22,7 @@ public class Password : ValueObject
         if(rawPassword.Any(ch => !char.IsAscii(ch)))
             throw new ArgumentException("Password must be on english", nameof(rawPassword));
         
-        if (rawPassword.Any(char.IsUpper))
+        if (!rawPassword.Any(char.IsUpper))
             throw new ArgumentException("Password must contain one capital letter",  nameof(rawPassword));
         
         if (!rawPassword.Any(char.IsLower))

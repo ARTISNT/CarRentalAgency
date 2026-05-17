@@ -8,7 +8,8 @@ public class IdentityNumber : ValueObject
     public string Value { get; private set; }
     
     private static readonly Regex IdentityNumberRegex = 
-        new Regex("^[1-6]\\d{6}[ABCKEMH]\\d{3}(PB|BA|BI)\\d$",  RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        new Regex(@"^(?:[1-6](0[1-9]|[12][0-9]|3[01])(0[1-9]|1[0-2])\d{2}[ABCHEKM]\d{3}(РВ|ВА|BI)\d|\d{7}[A-Z]\d{3}[A-Z]{2}\d)$", 
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
     
     private IdentityNumber(){}
 
