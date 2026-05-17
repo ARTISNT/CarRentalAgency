@@ -1,0 +1,31 @@
+{
+  "DiscountPolicy": {
+    "MaxDiscount": 0.5,
+    "PromoCodes": [
+      {
+        "Code": "WELCOME2026",
+        "Discount": 0.15
+      },
+      {
+        "Code": "LOYALTY_OFFER",
+        "Discount": 0.20
+      }
+    ],
+    "Rules": [
+      {
+        "Hours": 24,
+        "Discount": 0.05
+      },
+      {
+        "Hours": 48,
+        "Discount": 0.10
+      }
+    ]
+  },
+  "FinePolicy": {
+    "DelinquencyRate": 0.02
+  },
+  "DepositPolicy": {
+    "Percentage": 0.2
+  }
+}
