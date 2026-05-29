@@ -1,0 +1,161 @@
+version: '3.9'
+
+services:
+
+  mssql-users:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: UserDb
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_PASSWORD}
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-users-data:/var/opt/mssql
+
+  mssql-rentals:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: RentalDb
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_PASSWORD}
+    ports:
+      - "1434:1433"
+    volumes:
+      - mssql-rentals-data:/var/opt/mssql
+
+  mssql-cars:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: CarDb
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_PASSWORD}
+    ports:
+      - "1435:1433"
+    volumes:
+      - mssql-cars-data:/var/opt/mssql
+
+  mssql-contracts:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: ContractDb
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_PASSWORD}
+    ports:
+      - "1436:1433"
+    volumes:
+      - mssql-contracts-data:/var/opt/mssql
+
+  car-service:
+    build:
+      context: ./Services/CarService
+    ports:
+      - "5001:8080"
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Development
+
+      ConnectionStrings__DefaultConnection: >
+        Server=mssql-cars,1433;
+        Database=CarDb;
+        User Id=sa;
+        Password=${MSSQL_PASSWORD};
+        TrustServerCertificate=True;
+
+      InternalJwt__SecretKey: ${InternalJWT_KEY}
+      InternalJwt__Issuer: ${InternalJWT_ISSUER}
+      InternalJwt__Audience: ${InternalJWT_AUDIENCE}
+
+      UserJwt__SecretKey: ${UserJWT_KEY}
+      UserJwt__Issuer: ${UserJWT_ISSUER}
+      UserJwt__Audience: ${UserJWT_AUDIENCE}
+
+  user-service:
+    build:
+      context: ./Services/UserService
+    ports:
+      - "5002:8080"
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Development
+
+      ConnectionStrings__DefaultConnection: >
+        Server=mssql-users,1433;
+        Database=UserDb;
+        User Id=sa;
+        Password=${MSSQL_PASSWORD};
+        TrustServerCertificate=True;
+
+      InternalJwt__SecretKey: ${InternalJWT_KEY}
+      InternalJwt__Issuer: ${InternalJWT_ISSUER}
+      InternalJwt__Audience: ${InternalJWT_AUDIENCE}
+
+      UserJwt__SecretKey: ${UserJWT_KEY}
+      UserJwt__Issuer: ${UserJWT_ISSUER}
+      UserJwt__Audience: ${UserJWT_AUDIENCE}
+
+  rental-service:
+    build:
+      context: ./Services/RentalService
+    ports:
+      - "5003:8080"
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Development
+
+      ConnectionStrings__DefaultConnection: >
+        Server=mssql-rentals,1433;
+        Database=RentalDb;
+        User Id=sa;
+        Password=${MSSQL_PASSWORD};
+        TrustServerCertificate=True;
+
+      InternalJwt__SecretKey: ${InternalJWT_KEY}
+      InternalJwt__Issuer: ${InternalJWT_ISSUER}
+      InternalJwt__Audience: ${InternalJWT_AUDIENCE}
+
+      UserJwt__SecretKey: ${UserJWT_KEY}
+      UserJwt__Issuer: ${UserJWT_ISSUER}
+      UserJwt__Audience: ${UserJWT_AUDIENCE}
+
+  contract-service:
+    build:
+      context: ./Services/ContractService
+    ports:
+      - "5004:8080"
+    volumes:
+      - ./Storage/Contracts:/data/contracts:Z
+
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Development
+
+      ConnectionStrings__DefaultConnection: >
+        Server=mssql-contracts,1433;
+        Database=ContractDb;
+        User Id=sa;
+        Password=${MSSQL_PASSWORD};
+        TrustServerCertificate=True;
+
+      InternalJwt__SecretKey: ${InternalJWT_KEY}
+      InternalJwt__Issuer: ${InternalJWT_ISSUER}
+      InternalJwt__Audience: ${InternalJWT_AUDIENCE}
+
+      UserJwt__SecretKey: ${UserJWT_KEY}
+      UserJwt__Issuer: ${UserJWT_ISSUER}
+      UserJwt__Audience: ${UserJWT_AUDIENCE}
+
+  notification-service:
+    build:
+      context: ./Services/NotificationService
+    ports:
+      - "5005:8080"
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Development
+
+volumes:
+  mssql-users-data:
+  mssql-rentals-data:
+  mssql-cars-data:
+  mssql-contracts-data:
