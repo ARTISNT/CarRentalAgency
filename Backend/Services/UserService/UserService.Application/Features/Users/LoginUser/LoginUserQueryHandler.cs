@@ -13,10 +13,10 @@ public class LoginUserQueryHandler(
 {
     public async Task<string> Handle(LoginUserQuery request, CancellationToken cancellationToken)
     {
-        var user = await userRepository.GetByEmailAsync(request.LoginUserRequest.Email) ??
+        var user = await userRepository.GetByEmailAsync(request.Email) ??
                    throw new KeyNotFoundException("User not found");
 
-        if (!passwordProcessor.Verify(user.Password.Hash, request.LoginUserRequest.Password))
+        if (!passwordProcessor.Verify(user.Password.Hash, request.Password))
             throw new UnauthorizedAccessException("Invalid password");
 
         var token = jwtProvider.CreateJwtToken(user);

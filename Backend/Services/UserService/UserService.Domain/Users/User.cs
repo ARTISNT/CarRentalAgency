@@ -90,19 +90,53 @@ public sealed class User : Entity, IAggregateRoot
         AddDomainEvent(new UserRoleChangedDomainEvent(Id,  role.ToString(), DateTime.UtcNow));
     }
 
-    private bool Can(Permissions.Permissions permissionS)
+    private bool Can(Permissions.Permissions permissions)
     {
-        return Role.HasPermission(permissionS);
+        return Role.HasPermission(permissions);
     }
     
-    public bool CanDelete(User targetUser)
+    public bool CanDeactivate(Guid targetUserId)
     {
-        if (targetUser is null)
-            throw new ArgumentNullException(nameof(targetUser));
+        if (targetUserId == Guid.Empty)
+            throw new ArgumentNullException(nameof(targetUserId));
         
-        if(this == targetUser)
+        if(Id == targetUserId)
             return true;
         
-        return Can(Permissions.Permissions.DeleteUsers);
+        return Can(Permissions.Permissions.ChangeUserStatus);
+    }
+
+    public bool CanActivate(Guid targetUserId)
+    {
+        if (targetUserId == Guid.Empty)
+            throw new ArgumentNullException(nameof(targetUserId));
+
+        if (Id == targetUserId)
+            return true;
+
+        return Can(Permissions.Permissions.ChangeUserStatus);
+    }
+
+    public bool CanView(Guid targetUserId)
+    {
+        if (targetUserId == Guid.Empty)
+            throw new ArgumentNullException(nameof(targetUserId));
+        
+        if(Id == targetUserId)
+            return true;
+        
+        return Can(Permissions.Permissions.ViewUsers);
+    }
+    
+    
+    public bool CanEdit(Guid targetUserId)
+    {
+        if (targetUserId == Guid.Empty)
+            throw new ArgumentNullException(nameof(targetUserId));
+        
+        if(Id == targetUserId)
+            return true;
+        
+        return Can(Permissions.Permissions.EditUsers);
     }
 }

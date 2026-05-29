@@ -11,11 +11,11 @@ using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegiste
 
 namespace UserService.Infrastructure.Services;
 
-public sealed class JwtProvider(IConfiguration configuration) : IJwtProvider
+public sealed class UserJwtProvider(IConfiguration configuration) : IJwtProvider
 {
     public string CreateJwtToken(User user)
     {
-        var secureKey = configuration["Jwt:SecretKey"];
+        var secureKey = configuration["UserJwt:SecretKey"];
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secureKey));
 
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -32,10 +32,10 @@ public sealed class JwtProvider(IConfiguration configuration) : IJwtProvider
             {
                 {"permissions", user.Role.Permissions.Select(p => p.ToString()).ToList()},
             },
-            Expires = DateTime.UtcNow.AddMinutes(configuration.GetValue<int>("Jwt:ExpireMinutes")),
+            Expires = DateTime.UtcNow.AddMinutes(configuration.GetValue<int>("UserJwt:ExpireMinutes")),
             SigningCredentials =  credentials,
-            Issuer = configuration["Jwt:Issuer"],
-            Audience = configuration["Jwt:Audience"],
+            Issuer = configuration["UserJwt:Issuer"],
+            Audience = configuration["UserJwt:Audience"],
         };
 
         var handler = new JsonWebTokenHandler();

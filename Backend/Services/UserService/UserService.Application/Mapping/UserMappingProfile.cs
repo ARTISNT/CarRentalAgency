@@ -1,5 +1,6 @@
 using AutoMapper;
 using UserService.Application.Features.Users.AddUserPassport;
+using UserService.Application.Features.Users.GetUserForContract;
 using UserService.Application.Features.Users.GetUserForRent;
 using UserService.Application.Features.Users.GetUserPersonal;
 using UserService.Application.Features.Users.GetUsers;
@@ -43,5 +44,22 @@ public class UserMappingProfile : Profile
             .ForMember(dest => dest.Patronymic,
                 opt => opt.MapFrom(src => src.Passport.Patronymic));
 
+        CreateMap<User, ClientForContractResponse>()
+            .ForMember(dest => dest.Name,
+                opt => opt.MapFrom(src => src.Passport.Name))
+            .ForMember(dest => dest.PhoneNumber,
+                opt => opt.MapFrom(src => src.PhoneNumber.Value))
+            .ForMember(dest => dest.Surname,
+                opt => opt.MapFrom(src => src.Passport.Surname))
+            .ForMember(dest => dest.Patronymic,
+                opt => opt.MapFrom(src => src.Passport.Patronymic))
+            .ForMember(dest => dest.PassportIdentificationNumber,
+                opt => opt.MapFrom(src => src.Passport.IdentityNumber))
+            .ForMember(dest => dest.PassportIssueDate,
+                opt => opt.MapFrom(src => src.Passport.PassportIssueDate))
+            .ForMember(dest => dest.PassportNumber,
+                opt => opt.MapFrom(src => src.Passport.PassportNumber))
+            .ForMember(dest => dest.BirthDate,
+                opt=> opt.MapFrom(src => src.Passport.BirthDate));
     }
 }

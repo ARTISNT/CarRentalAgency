@@ -1,4 +1,4 @@
-namespace UserService.Application.Features.Users.AddUserPassport;
+namespace UserService.Api.Requests;
 
 public class PassportRequest
 {

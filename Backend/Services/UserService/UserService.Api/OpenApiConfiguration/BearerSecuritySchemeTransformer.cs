@@ -14,23 +14,10 @@ namespace UserService.Api.OpenApiConfiguration
             CancellationToken cancellationToken
         )
         {
-            var authenticationSchemes =
-                await authenticationSchemeProvider.GetAllSchemesAsync();
+            var authenticationSchemes = await authenticationSchemeProvider.GetAllSchemesAsync();
 
-            if (authenticationSchemes.Any(authScheme => authScheme.Name == "Bearer"))
+            if (authenticationSchemes.Any(authScheme => authScheme.Name.Contains("Auth")))
             {
-                // Add the security scheme at the document level
-                // var requirements = new Dictionary<string, OpenApiSecurityScheme>
-                // {
-                //     ["Bearer"] = new()
-                //     {
-                //         Type = SecuritySchemeType.Http,
-                //         Scheme = "bearer",
-                //         In = ParameterLocation.Header,
-                //         BearerFormat = "Json Web Token"
-                //     }
-                // };
-
                 var bearerScheme = new OpenApiSecurityScheme
                 {
                     Type = SecuritySchemeType.Http,
@@ -41,23 +28,32 @@ namespace UserService.Api.OpenApiConfiguration
                 };
 
                 document.Components ??= new OpenApiComponents();
-                document.AddComponent("Bearer", bearerScheme);
+                document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
 
-                // document.Components.SecuritySchemes = requirements;
+                if (!document.Components.SecuritySchemes.ContainsKey("Bearer"))
+                {
+                    document.Components.SecuritySchemes.Add("Bearer", bearerScheme);
+                }
 
                 var securityRequirements = new OpenApiSecurityRequirement
                 {
                     [new OpenApiSecuritySchemeReference("Bearer", document)] = []
                 };
 
-                // Apply it as a requirement for all operations
-                foreach (var operation in document.Paths.Values
-                             .SelectMany(path => path.Operations))
+                if (document.Paths == null)
                 {
-                    operation.Value.Security ??=
-                        new List<OpenApiSecurityRequirement>();
+                    return;
+                }
 
-                    operation.Value.Security.Add(securityRequirements);
+                foreach (var path in document.Paths.Values)
+                {
+                    if (path?.Operations == null) continue;
+
+                    foreach (var operation in path.Operations.Values)
+                    {
+                        operation.Security ??= new List<OpenApiSecurityRequirement>();
+                        operation.Security.Add(securityRequirements);
+                    }
                 }
             }
         }

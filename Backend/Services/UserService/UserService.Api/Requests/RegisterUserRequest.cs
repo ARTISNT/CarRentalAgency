@@ -1,4 +1,4 @@
-namespace UserService.Application.Features.Users.RegisterUser;
+namespace UserService.Api.Requests;
 
 public class RegisterUserRequest
 {

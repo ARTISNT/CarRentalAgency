@@ -35,10 +35,9 @@ public class UserRepository(UserServiceContext context) : IUserRepository
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task Remove(Guid userId)
+    public async Task RemoveAsync(User user, CancellationToken cancellationToken = default)
     {
-        var user = await context.Users.FindAsync(userId);
         context.Users.Remove(user);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
     }
 }

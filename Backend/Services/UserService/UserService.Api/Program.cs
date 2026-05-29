@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using UserService.Api.OpenApiConfiguration;
+using UserService.Application.Authorization;
 using UserService.Application.Common;
 using UserService.Application.Features.Users.GetUsers;
 using UserService.Application.Features.Users.RegisterUser;
@@ -55,25 +56,64 @@ builder.Services.AddMassTransit(busConfigurator =>
 */
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IPasswordProcessor, PasswordProcessor>();
-builder.Services.AddScoped<IJwtProvider, JwtProvider>();
+builder.Services.AddScoped<IJwtProvider, UserJwtProvider>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUserContext, UserContext>();
+builder.Services.AddScoped<IUserAuthorizationService,  UserAuthorizationService>();
 builder.Services.AddTransient<IDomainEventDispatcher,  DomainEventDispatcher>();
 
 builder.Services.AddAuthorization(options =>
-{ 
-    options.AddPolicy(Permissions.ViewUsers.Name,
-        p => p.RequireClaim("permissions", Permissions.ViewUsers.Name));
+{
+    foreach (var permission in Permissions.All)
+    {
+        options.AddPolicy(permission.Name, 
+            p => p.RequireClaim("permissions", permission.Name));
+    }
+    
+    options.AddPolicy("RentalServiceOnly", policy =>
+    {
+        policy.RequireClaim("service", "RentalService");
+    });
+    
+    options.AddPolicy("ContractServiceOnly", policy =>
+    {
+        policy.RequireClaim("service", "ContractService");
+    });
 });
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = "UserAuth";
+        options.DefaultChallengeScheme = "UserAuth";
+    })
+    .AddJwtBearer("UserAuth", options =>
     {
         options.RequireHttpsMetadata = false;
-        options.TokenValidationParameters = new TokenValidationParameters()
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"])),
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
             ClockSkew = TimeSpan.Zero,
+            ValidIssuer = builder.Configuration["UserJwt:Issuer"],
+            ValidAudience = builder.Configuration["UserJwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["UserJwt:SecretKey"]))
+        };
+    })
+    .AddJwtBearer("InternalAuth", options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.Zero,
+            ValidIssuer = builder.Configuration["InternalJwt:Issuer"],
+            ValidAudience = builder.Configuration["InternalJwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["InternalJwt:SecretKey"]))
         };
     });
 

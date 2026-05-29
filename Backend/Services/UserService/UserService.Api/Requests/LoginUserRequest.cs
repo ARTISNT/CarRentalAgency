@@ -1,4 +1,4 @@
-namespace UserService.Application.Features.Users.LoginUser;
+namespace UserService.Api.Requests;
 
 public class LoginUserRequest
 {
