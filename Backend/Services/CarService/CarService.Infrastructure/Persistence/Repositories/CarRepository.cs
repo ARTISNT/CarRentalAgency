@@ -29,9 +29,8 @@ public class CarRepository(CarServiceDbContext dbContext) : ICarRepository
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeleteAsync(Guid carId, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(Car car, CancellationToken cancellationToken = default)
     {
-        var car = await dbContext.Cars.FirstOrDefaultAsync(x => x.Id == carId, cancellationToken);
         dbContext.Cars.Remove(car);
         await dbContext.SaveChangesAsync(cancellationToken);
     }

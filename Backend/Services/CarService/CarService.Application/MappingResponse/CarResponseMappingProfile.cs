@@ -1,19 +1,15 @@
 using AutoMapper;
-using CarService.Application.Features.AddCar;
+using CarService.Application.Features.GetCarForContract;
 using CarService.Application.Features.GetCarForRent;
 using CarService.Application.Features.GetCars;
 using CarService.Application.Features.GetDetailedCars;
-using CarService.Application.Features.UpdateCar;
 using CarService.Domain.Cars;
-using CarService.Domain.Cars.Enums;
-using CarService.Domain.Cars.ValueObjects;
-using DriveType = CarService.Domain.Cars.Enums.DriveType;
 
-namespace CarService.Application.Mapping;
+namespace CarService.Application.MappingResponse;
 
-public class CarMappingProfile : Profile
+public class CarResponseMappingProfile : Profile
 {
-    public CarMappingProfile()
+    public CarResponseMappingProfile()
     {
         CreateMap<Car, CarListResponse>()
             .ForMember(dest => dest.Brand,
@@ -67,44 +63,18 @@ public class CarMappingProfile : Profile
             .ForMember(dest => dest.PricePerHour,
                 opt => opt.MapFrom(src => src.PricePerHour.Price)) 
             .ForMember(dest => dest.CarClass, 
-                opt => opt.MapFrom(src => src.Class.Name)); 
-        
-        CreateMap<CreateCarDto, Car>()
-            .ConstructUsing(dto =>
-                Car.Create(
-                    dto.ReleaseDate,
+                opt => opt.MapFrom(src => src.Class.Name));
 
-                    new LicensePlate(dto.LicensePlate),
-
-                    new VinCode(dto.VinCode),
-
-                    new Color(dto.Color),
-
-                    new CarModelInfo(
-                        dto.Model,
-                        dto.Brand,
-                        dto.Generation,
-                        dto.Variant,
-                        dto.IsFacelift),
-
-                    new CarTechInfo(
-                        dto.Mileage,
-
-                        new EngineDetails(
-                            dto.HorsePower,
-                            dto.EngineVolume,
-                            dto.HorsePower,
-                            EngineType.FromName<EngineType>(dto.EngineType)),
-
-                        BodyStyle.FromName<BodyStyle>(dto.BodyStyle),
-                        TransmissionType.FromName<TransmissionType>(dto.TransmissionType),
-                        DriveType.FromName<DriveType>(dto.DriveType)),
-
-                    new PricePerHour(dto.PricePerHour),
-
-                    CarClass.FromName<CarClass>(dto.CarClass),
-
-                    dto.PhotoUrl
-                )); 
+        CreateMap<Car, CarForContractResponse>()
+            .ForMember(dest => dest.Model,
+                opt => opt.MapFrom(src => src.ModelInfo.Model))
+            .ForMember(dest => dest.Brand,
+                opt => opt.MapFrom(src => src.ModelInfo.Brand))
+            .ForMember(dest => dest.LicensePlate,
+                opt => opt.MapFrom(src => src.LicensePlate.Value))
+            .ForMember(dest => dest.Color,
+                opt => opt.MapFrom(src => src.Color.Value))
+            .ForMember(dest => dest.CarBodyStyle,
+                opt => opt.MapFrom(src => src.TechInfo.BodyStyle.Name));
     }
 }

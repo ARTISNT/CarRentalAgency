@@ -8,7 +8,16 @@ public class AddCarCommandHandler(ICarRepository carRepository, IMapper mapper) 
 {
     public async Task Handle(AddCarCommand request, CancellationToken cancellationToken)
     {
-        var car = mapper.Map<Car>(request.CreateCarDto);
+        var car = Car.Create(request.ReleaseDate,
+            request.LicensePlate,
+            request.VinCode,
+            request.Color,
+            request.CarModelInfo,
+            request.CarTechInfo,
+            request.PricePerHour,
+            request.CarClass,
+            request.PhotoUrl);
+        
         await carRepository.AddAsync(car, cancellationToken);
     }
 }

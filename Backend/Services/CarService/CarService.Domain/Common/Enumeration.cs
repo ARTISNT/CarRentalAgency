@@ -21,13 +21,16 @@ public abstract class Enumeration
 
     public static T FromName<T>(string name) where T : Enumeration
     {
-            var matchingItem = GetAll<T>().FirstOrDefault(item => 
-                string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase));
-        
-            if (matchingItem == null)
-                throw new InvalidOperationException($"'{name}' is not a valid name in {typeof(T)}");
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Name cannot be null or empty", nameof(name));
 
-            return matchingItem;
+        var matchingItem = GetAll<T>().FirstOrDefault(item =>
+            string.Equals(item.Name.Trim(), name.Trim(), StringComparison.OrdinalIgnoreCase));
+
+        if (matchingItem == null)
+            throw new InvalidOperationException($"'{name}' is not a valid name in {typeof(T).Name}");
+
+        return matchingItem;
     }
     
     public static T FromValue<T>(int id) where T : Enumeration

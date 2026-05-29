@@ -1,21 +1,20 @@
-namespace CarService.Application.Features.UpdateCar;
-public sealed record UpdateCarDto
+namespace CarService.Api.Requests;
+
+public sealed record CreateCarRequest
 {
     public DateTime ReleaseDate { get; init; }
 
     public string LicensePlate { get; init; } = default!;
 
+    public string VinCode { get; init; } = default!;
+
     public string Color { get; init; } = default!;
 
     // Model info
     public string Model { get; init; } = default!;
-
     public string Brand { get; init; } = default!;
-
     public string? Generation { get; init; }
-
     public bool IsFacelift { get; init; }
-
     public string? Variant { get; init; }
 
     // Technical info
@@ -30,11 +29,12 @@ public sealed record UpdateCarDto
     // Engine
     public string EngineType { get; init; } = default!;
 
-    public double EngineVolume { get; init; }
+    public double? EngineVolume { get; init; }
 
     public int HorsePower { get; init; }
+    public double? PowerReverse { get; init; }
 
-    // Pricing
+// Pricing
     public double PricePerHour { get; init; }
 
     // Class
