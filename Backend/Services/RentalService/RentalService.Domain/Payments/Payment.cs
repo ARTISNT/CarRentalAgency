@@ -1,4 +1,5 @@
 using RentalService.Domain.Common;
+using RentalService.Domain.Rentals.PricingPolicies;
 
 namespace RentalService.Domain.Payments;
 
@@ -7,14 +8,10 @@ public class Payment : Entity, IAggregateRoot
     private readonly List<PaymentTransaction> _transactions = [];
 
     public Guid RentalId { get; private set; }
-
     public Money EstimatedAmount { get; private set; }
     public Money? FinalAmount { get; private set; }
-
     public Money DepositAmount { get; private set; }
-
     public PaymentStatus Status { get; private set; }
-
     public DateTime CreatedAtUtc { get; private set; }
 
     public IReadOnlyCollection<PaymentTransaction> Transactions =>

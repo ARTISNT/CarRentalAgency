@@ -1,3 +1,4 @@
+using RentalService.Domain.Payments;
 using RentalService.Domain.Rentals;
 using RentalService.Domain.Rentals.PricingPolicies;
 
@@ -5,47 +6,59 @@ namespace RentalService.Domain.Services;
 
 public class RentalPricingDomainService
 {
-    public decimal CalculateBaseCost(
+    public Money CalculateBaseCost(
         BasePricingPolicy pricingPolicy,
-        Rental rental)
+        Rental rental,
+        string currency)
     {
-        return pricingPolicy.CalculateBasePrice(
+        return new Money(pricingPolicy.CalculateBasePrice(
             rental.StartDate,
             rental.EndDate,
-            rental.RentCarSnapshot.PricePerHour);
-    } 
+            rental.RentCarSnapshot.PricePerHour), currency);
+    }
 
-    public decimal CalculateFine(
-        FinePolicy finePolicy,
-        Rental rental)
-    {
-        if (!rental.ReturnDate.HasValue)
-            return 0;
-
-        return finePolicy.CalculateFine(
-            rental.EndDate,
-            rental.ReturnDate,
-            rental.RentCarSnapshot.PricePerHour);
-    } 
-    
-    public decimal CalculateTotal(
+    public Money CalculateBaseCostWithDiscount(
         PricingPolicies pricingPolicies,
         Rental rental,
+        string currency,
         string? promoCode = null)
     {
         var totalHours = pricingPolicies.BasePricingPolicy.GetTotalHours(
             rental.StartDate,
             rental.EndDate);
         
-        var baseCost = CalculateBaseCost(pricingPolicies.BasePricingPolicy, rental);
+        var baseCost = CalculateBaseCost(pricingPolicies.BasePricingPolicy, rental, currency);
     
-        var discount = pricingPolicies.DiscountPolicy.CalculateDiscount(
-            baseCost,
+        var discount = new Money(pricingPolicies.DiscountPolicy.CalculateDiscount(
+            baseCost.Amount,
             totalHours,
-            promoCode);
+            promoCode), currency);
+        
+        return baseCost - discount;
+    }
 
-        var fine = CalculateFine(pricingPolicies.FinePolicy, rental);
+    public Money CalculateFine(
+        FinePolicy finePolicy,
+        Rental rental,
+        string currency)
+    {
+        if (!rental.ReturnDate.HasValue)
+            return Money.Zero(currency);
 
-        return baseCost - discount + fine;
+        return new Money(finePolicy.CalculateFine(
+            rental.EndDate,
+            rental.ReturnDate,
+            rental.RentCarSnapshot.PricePerHour), currency);
+    } 
+    
+    public Money CalculateTotal(
+        PricingPolicies pricingPolicies,
+        Rental rental,
+        Payment rentalPayment,
+        string currency)
+    {
+        var fine = CalculateFine(pricingPolicies.FinePolicy, rental, currency);
+
+        return rentalPayment.EstimatedAmount + fine;
     }
 }

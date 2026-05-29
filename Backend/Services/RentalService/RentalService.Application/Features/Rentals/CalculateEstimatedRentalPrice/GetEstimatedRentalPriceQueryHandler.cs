@@ -16,8 +16,8 @@ public class GetEstimatedRentalPriceQueryHandler(
                      throw new KeyNotFoundException("Rental not found");
         var pricingPolicies = pricingPoliciesFactory.Create();
 
-        var baseCost = rentalPricingDomainService.CalculateBaseCost(pricingPolicies.BasePricingPolicy, rental);
+        var baseCost = rentalPricingDomainService.CalculateBaseCostWithDiscount(pricingPolicies, rental, "BYN", request.PromoCode);
         
-        return baseCost;
+        return baseCost.Amount;
     }
 }

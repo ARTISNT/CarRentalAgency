@@ -1,5 +1,6 @@
 using AutoMapper;
 using RentalService.Application.Features.Rentals.GetRental;
+using RentalService.Application.Features.Rentals.GetRentalForContract;
 using RentalService.Application.Features.Rentals.GetRentals;
 using RentalService.Domain.Rentals;
 

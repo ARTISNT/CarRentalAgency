@@ -31,11 +31,11 @@ public class RentalController(ISender sender) : ControllerBase
         return Ok(rentals);
     }
 
-    [HttpGet]
+    [HttpPost]
     [Route("CalculateEstimatedCost/{id}")]
-    public async Task<IActionResult> CalculateEstimatedCost([FromRoute]Guid id)
+    public async Task<IActionResult> CalculateEstimatedCost([FromRoute]Guid id, [FromBody]GetEstimatedRentalPriceRequest request)
     {
-        var cost = await sender.Send(new GetEstimatedRentalPriceQuery(id));
+        var cost = await sender.Send(new GetEstimatedRentalPriceQuery(id, request.PromoCode));
         return Ok(cost);
     }
     
@@ -44,7 +44,7 @@ public class RentalController(ISender sender) : ControllerBase
     public async Task<IActionResult> CreateRental([FromBody]CreateRentalRequest request)
     {
         await sender.Send(new CreateRentalCommand(request.UserId, request.CarId, 
-            request.StartDate, request.EndDate));
+            request.StartDate, request.EndDate, request.PromoCode));
         return Ok();
     }
 

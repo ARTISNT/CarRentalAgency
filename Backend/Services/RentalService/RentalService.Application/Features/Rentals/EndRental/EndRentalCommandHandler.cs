@@ -15,18 +15,18 @@ public class EndRentalCommandHandler(
 {
     public async Task Handle(EndRentalCommand request, CancellationToken cancellationToken)
     {
-        var rental = await rentalRepository.GetRentalAsync(request.Id) ??
+        var rental = await rentalRepository.GetRentalAsync(request.Id, cancellationToken) ??
                      throw new KeyNotFoundException("Rental not found");
         var pricingPolicies = pricingPoliciesFactory.Create();
         
-        var totalCost = rentalPricingDomainService.CalculateTotal(pricingPolicies, rental, request.PromoCode);
+        var payment = await paymentRepository.GetPaymentByRentIdAsync(rental.Id, cancellationToken);
         
-        var payment = await paymentRepository.GetPaymentByRentIdAsync(rental.Id);
-        payment.FinalizeAmount(new Money(totalCost, payment.DepositAmount.Currency));
-        
+        var totalCost = rentalPricingDomainService.CalculateTotal(pricingPolicies, rental, payment, "BYN");
+
+        payment.FinalizeAmount(totalCost);
         rental.EndRental(request.ReturnDate);
         
-        await rentalRepository.UpdateRentalAsync(rental);
-        await paymentRepository.UpdatePaymentAsync(payment);
+        await rentalRepository.UpdateRentalAsync(rental, cancellationToken);
+        await paymentRepository.UpdatePaymentAsync(payment, cancellationToken);
     }
 }

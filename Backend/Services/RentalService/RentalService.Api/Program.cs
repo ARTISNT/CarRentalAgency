@@ -1,5 +1,7 @@
+using System.Text;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using RentalService.Api.Requests;
 using RentalService.Application.Common;
 using RentalService.Application.Features.Rentals.CreateRental;
@@ -13,6 +15,7 @@ using RentalService.Infrastructure;
 using RentalService.Infrastructure.Common;
 using RentalService.Infrastructure.Repositories;
 using RentalService.Infrastructure.Services.ExternalServices;
+using RentalService.Infrastructure.Services.InternalServices;
 using RentalService.Infrastructure.Services.PricingPolicyServices;
 using Scalar.AspNetCore;
 
@@ -38,6 +41,8 @@ builder.Services.AddScoped<IPricingPoliciesFactory, PricingPoliciesFactory>();
 builder.Services.AddScoped<IJsonPriceSettingProvider, JsonPriceSettingProvider>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<RentalPricingDomainService>();
+builder.Services.AddScoped<IJwtProvider, InternalJwtProvider>();
+
 builder.Services.AddHttpClient("UserApi", client =>
 {
     client.BaseAddress = new Uri("http://localhost:5068");
@@ -51,11 +56,51 @@ builder.Services.AddHttpClient("CarApi", client =>
 
 builder.Services.AddScoped<IUserExternalService, UserExternalService>();
 builder.Services.AddScoped<ICarExternalService, CarExternalService>();
+
+builder.Services.AddAuthorization(cfg => cfg.AddPolicy("ContractServiceOnly",
+    policy => policy.RequireClaim("service",
+        "ContractService")));
+
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = "UserAuth";
+        options.DefaultChallengeScheme = "UserAuth";
+    })
+    .AddJwtBearer("UserAuth", options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.Zero,
+            ValidIssuer = builder.Configuration["UserJwt:Issuer"],
+            ValidAudience = builder.Configuration["UserJwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["UserJwt:SecretKey"]))
+        };
+    })
+    .AddJwtBearer("InternalAuth", options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.Zero,
+            ValidIssuer = builder.Configuration["InternalJwt:Issuer"],
+            ValidAudience = builder.Configuration["InternalJwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["InternalJwt:SecretKey"]))
+        };
+    });
 /*
 builder.Services.AddMassTransit(busConfigurator =>
 {
     busConfigurator.SetKebabCaseEndpointNameFormatter();
-    
+
     busConfigurator.UsingRabbitMq((context, configurator)=>
     {
         configurator.Host(new Uri(builder.Configuration["MessageBroker:Host"]), h =>
@@ -63,7 +108,7 @@ builder.Services.AddMassTransit(busConfigurator =>
             h.Username(builder.Configuration["MessageBroker:Username"]);
             h.Password(builder.Configuration["MessageBroker:Password"]);
         });
-        
+
     });
 });*/
 
@@ -76,6 +121,8 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 app.UseHttpsRedirection();
 app.Run();

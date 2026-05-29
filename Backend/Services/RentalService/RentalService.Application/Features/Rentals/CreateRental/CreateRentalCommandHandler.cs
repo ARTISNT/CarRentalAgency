@@ -2,6 +2,7 @@ using MediatR;
 using RentalService.Application.Common;
 using RentalService.Domain.Payments;
 using RentalService.Domain.Rentals;
+using RentalService.Domain.Rentals.PricingPolicies;
 using RentalService.Domain.Services;
 
 namespace RentalService.Application.Features.Rentals.CreateRental;
@@ -29,12 +30,12 @@ public class CreateRentalCommandHandler(
         
         var rental = new Rental(request.StartDate, request.EndDate, rentCarSnapshot, carRenterSnapshot);
 
-        var baseCost = new Money(rentalPricingDomainService.CalculateBaseCost(
-            pricingPolicies.BasePricingPolicy, rental), "BYN");
-        var deposit = pricingPolicies.DepositPolicy.CalculateDeposit(baseCost);
+        var baseCostWithDiscount = rentalPricingDomainService.CalculateBaseCostWithDiscount(
+            pricingPolicies, rental, "BYN", request.PromoCode);
+        
+        var deposit = pricingPolicies.DepositPolicy.CalculateDeposit(baseCostWithDiscount);
 
-        var payment = new Payment(rental.Id, baseCost, deposit);
-        Console.WriteLine(payment.Id);
+        var payment = new Payment(rental.Id, baseCostWithDiscount, deposit);
         rental.AttachPayment(payment.Id);
         
         await rentalRepository.AddRentalAsync(rental);

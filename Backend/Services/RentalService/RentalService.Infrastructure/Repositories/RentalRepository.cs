@@ -5,25 +5,25 @@ namespace RentalService.Infrastructure.Repositories;
 
 public class RentalRepository(RentalServiceContext dbContext) : IRentalRepository
 {
-    public async Task<IReadOnlyCollection<Rental>> GetRentalsAsync()
+    public async Task<IReadOnlyCollection<Rental>> GetRentalsAsync(CancellationToken cancellationToken = default)
     {
-        return await dbContext.Rentals.ToListAsync();
+        return await dbContext.Rentals.ToListAsync(cancellationToken);
     }
     
-    public async Task<Rental?> GetRentalAsync(Guid rentalId)
+    public async Task<Rental?> GetRentalAsync(Guid rentalId, CancellationToken cancellationToken = default)
     {
-        return await dbContext.Rentals.FirstOrDefaultAsync(r => r.Id == rentalId);
+        return await dbContext.Rentals.FirstOrDefaultAsync(r => r.Id == rentalId, cancellationToken);
     }
 
-    public async Task AddRentalAsync(Rental rental)
+    public async Task AddRentalAsync(Rental rental, CancellationToken cancellationToken = default)
     {
-        await dbContext.Rentals.AddAsync(rental);
-        await dbContext.SaveChangesAsync();
+        await dbContext.Rentals.AddAsync(rental, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateRentalAsync(Rental rental)
+    public async Task UpdateRentalAsync(Rental rental, CancellationToken cancellationToken = default)
     {
         dbContext.Rentals.Update(rental);
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

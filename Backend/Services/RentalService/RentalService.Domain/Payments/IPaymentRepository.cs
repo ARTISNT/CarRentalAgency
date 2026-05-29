@@ -2,8 +2,8 @@ namespace RentalService.Domain.Payments;
 
 public interface IPaymentRepository
 {
-    public Task<Payment> GetPaymentAsync(Guid paymentId);
-    public Task<Payment> GetPaymentByRentIdAsync(Guid rentalId);
-    public Task AddPaymentAsync(Payment payment);
-    public Task UpdatePaymentAsync(Payment payment);
+    public Task<Payment> GetPaymentAsync(Guid paymentId, CancellationToken cancellationToken = default);
+    public Task<Payment> GetPaymentByRentIdAsync(Guid rentalId, CancellationToken cancellationToken = default);
+    public Task AddPaymentAsync(Payment payment, CancellationToken cancellationToken = default);
+    public Task UpdatePaymentAsync(Payment payment, CancellationToken cancellationToken = default);
 }

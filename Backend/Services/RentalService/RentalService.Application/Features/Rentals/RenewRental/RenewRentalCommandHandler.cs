@@ -23,8 +23,8 @@ public class RenewRentalCommandHandler(
 
         var payment = await paymentRepository.GetPaymentByRentIdAsync(rental.Id);
         
-        var newTotalCost = new Money(
-            pricingDomainService.CalculateTotal(pricingPolicies, rental), 
+        var newTotalCost = 
+            pricingDomainService.CalculateTotal(pricingPolicies, rental, payment, 
             payment.DepositAmount.Currency);
         
         payment.UpdateEstimatedAmount(newTotalCost);
