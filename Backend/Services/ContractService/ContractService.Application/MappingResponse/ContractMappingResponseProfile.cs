@@ -3,6 +3,7 @@ using ContractService.Application.Features.Contracts.CreateContract;
 using ContractService.Application.Features.Contracts.GetContract;
 using ContractService.Application.Features.Contracts.GetContracts;
 using ContractService.Application.Features.Contracts.GetDetailedContract;
+using ContractService.Application.Features.ContractsTemplates.GetContractTemplates;
 using ContractService.Domain.Contracts;
 
 namespace ContractService.Application.MappingResponse;
@@ -42,6 +43,7 @@ public class ContractMappingResponseProfile : Profile
         CreateMap<ClientSnapshot, ClientResponse>();
         CreateMap<ContractAutoSnapshot, ContractAutoResponse>();
         CreateMap<ContractTemplateSnapshot, ContractTemplateResponse>();
+        CreateMap<ContractTemplate, ContractTemplateListResponse>();
         CreateMap<RentalSnapshot, RentalResponse>(); 
     }
 }
