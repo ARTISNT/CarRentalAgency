@@ -423,3 +423,9 @@ fabric.properties
 gitignore
 # JetBrains Rider (and other JetBrains IDEs) cache/options directory
 .idea/
+
+# Environment variables
+.env
+
+# Generated storage files
+Storage/

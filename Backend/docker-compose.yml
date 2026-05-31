@@ -145,6 +145,8 @@ services:
       UserJwt__Issuer: ${UserJWT_ISSUER}
       UserJwt__Audience: ${UserJWT_AUDIENCE}
 
+      ContractCertificate__Password: ${ContractCertificate_PASSWORD}
+
   notification-service:
     build:
       context: ./Services/NotificationService

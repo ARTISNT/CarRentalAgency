@@ -1,6 +1,7 @@
 using ContractService.Application.Features.Contracts.CreateContract;
 using ContractService.Application.Features.Contracts.GetContract;
 using ContractService.Application.Features.Contracts.GetContracts;
+using ContractService.Application.Features.Contracts.SignContract;
 using ContractService.Requests;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -28,6 +29,15 @@ public class ContractController(ISender sender) : ControllerBase
     {
         var contract = await sender.Send(new GetContractQuery(id), cancellationToken);
         return Ok(contract);
+    }
+
+    [HttpPut]
+    [Route("sign-contract")]
+    public async Task<IActionResult> SignContractAsync([FromBody]SignContractCommand request,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(request, cancellationToken);
+        return Ok();
     }
     
     [HttpPost]

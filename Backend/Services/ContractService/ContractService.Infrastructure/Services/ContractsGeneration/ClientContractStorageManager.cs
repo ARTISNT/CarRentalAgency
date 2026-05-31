@@ -7,16 +7,29 @@ namespace ContractService.Infrastructure.Services.ContractsGeneration;
 public class ClientContractStorageManager : IContractStorage
 {
     private readonly string _basePath;
+    
+    private const string AdditionsFolder = "additions"; 
 
     public ClientContractStorageManager(IConfiguration configuration)
     {
         _basePath = configuration["Storage:ContractsPath"]
                     ?? throw new ArgumentNullException("Storage:ContractsPath is not configured");
+        
     }
 
+    public string GetContractSignedPath(Guid clientId, Contract contract)
+    {
+        string directory = GetClientDirectory(clientId, contract);
+
+        string fileName =
+            $"{contract.Id}_from_{contract.Rental.StartDate:yyyy-MM-dd}_to_{contract.Rental.EndDate:yyyy-MM-dd}_signed.pdf";
+
+        return Path.Combine(directory, fileName);
+    }
+    
     public string GetContractPath(Guid clientId, Contract contract)
     {
-        string directory = GetClientDirectory(clientId);
+        string directory = GetClientDirectory(clientId, contract);
 
         string fileName =
             $"{contract.Id}_from_{contract.Rental.StartDate:yyyy-MM-dd}_to_{contract.Rental.EndDate:yyyy-MM-dd}.pdf";
@@ -26,7 +39,7 @@ public class ClientContractStorageManager : IContractStorage
 
     public string GetAdditionPath(Guid clientId, Contract contract)
     {
-        string directory = Path.Combine(GetClientDirectory(clientId), "additions");
+        string directory = Path.Combine(GetClientDirectory(clientId, contract), AdditionsFolder);
 
         string fileName = $"{contract.Id}_addition.pdf";
 
@@ -35,18 +48,16 @@ public class ClientContractStorageManager : IContractStorage
 
     public void EnsureDirectoriesExist(Guid clientId, Contract contract)
     {
-        Directory.CreateDirectory(GetClientDirectory(clientId));
-        Directory.CreateDirectory(Path.Combine(GetClientDirectory(clientId), "additions"));
+        Directory.CreateDirectory(GetClientDirectory(clientId, contract));
+        Directory.CreateDirectory(Path.Combine(GetClientDirectory(clientId, contract), AdditionsFolder));
     }
 
-    private string GetClientDirectory(Guid clientId)
+    private string GetClientDirectory(Guid clientId, Contract contract)
     {
-        var now = DateTime.UtcNow;
-
         return Path.Combine(
             _basePath,
-            now.Year.ToString(),
-            now.Month.ToString(),
+            contract.CreatedAt.Year.ToString(),
+            contract.CreatedAt.Month.ToString(),
             clientId.ToString());
     }
 }

@@ -11,6 +11,7 @@ using ContractService.Infrastructure.Persistence;
 using ContractService.Infrastructure.Persistence.Repositories;
 using ContractService.Infrastructure.Security;
 using ContractService.Infrastructure.Services.ContractsGeneration;
+using ContractService.Infrastructure.Services.ContractsSigning;
 using ContractService.OpenApiConfiguration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -47,6 +48,8 @@ builder.Services.AddScoped<IContractStorage, ClientContractStorageManager>();
 builder.Services.AddScoped<ContractDocumentService>();
 builder.Services.AddScoped<IUserContext, UserContext>();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IContractSigningService, ContractSigningService>();
+builder.Services.AddScoped<IContractCertificateProvider, ContractCertificateProvider>();
 
 builder.Services.AddHttpClient("UserApi", client =>
 {
