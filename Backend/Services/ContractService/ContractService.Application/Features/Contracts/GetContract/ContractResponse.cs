@@ -8,6 +8,7 @@ public class ContractResponse
     public string Name { get; init; }
     public string Surname { get; init; }
     public string Patronymic { get; init; }
+    public DateTime CreatedAt { get; init; }
     public DateTime PassportIssueDate { get; init; }
     public DateTime BirthDate { get; init; }
 }

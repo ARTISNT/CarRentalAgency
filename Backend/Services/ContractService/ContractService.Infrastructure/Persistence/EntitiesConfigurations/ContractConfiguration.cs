@@ -22,6 +22,8 @@ public class ContractConfiguration : IEntityTypeConfiguration<Contract>
                 name => Enumeration.FromName<ContractStatus>(name))
             .HasMaxLength(50)
             .IsRequired();
+        
+        builder.Property(x => x.CreatedAt).IsRequired();
 
         // ClientSnapshot
         builder.OwnsOne(x => x.Client, client =>

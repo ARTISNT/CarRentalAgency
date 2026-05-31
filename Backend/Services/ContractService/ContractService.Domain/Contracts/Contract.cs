@@ -6,6 +6,7 @@ namespace ContractService.Domain.Contracts;
 public sealed class Contract : Entity, IAggregateRoot
 {
     public Guid ContractTemplateId { get; private set; }
+    public DateTime CreatedAt { get; private set; }
     public ContractStatus Status { get; private set; }
     public ClientSnapshot Client { get; }
     public ContractAutoSnapshot Car { get; }
@@ -28,7 +29,9 @@ public sealed class Contract : Entity, IAggregateRoot
         Car = car ?? throw new ArgumentNullException(nameof(car));
         Template = template ?? throw new ArgumentNullException(nameof(template));
         Rental = rental  ?? throw new ArgumentNullException(nameof(rental));
+        CreatedAt = DateTime.UtcNow;
         Status = ContractStatus.AwaitingSignature;
+        
         AddDomainEvent(new ContractCreatedDomainEvent(Id, DateTime.UtcNow));
     }
     

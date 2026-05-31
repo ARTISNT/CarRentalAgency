@@ -17,4 +17,5 @@ public class ContractListResponse
     public string Status { get; init; }
 
     public string PdfPath { get; init; }    
+    public DateTime CreatedAt { get; init; }
 }
