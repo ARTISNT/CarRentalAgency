@@ -1,56 +1,51 @@
-using System.Reflection;
 using UserService.Domain.Common;
 
 namespace UserService.Domain.Permissions;
 
-public class Permissions : Enumeration
+public class Permission : Enumeration
 {
-    // USERS
-    public static readonly Permissions ViewUsers = new(1, "ViewUsers");
-    public static readonly Permissions EditUsers = new(2, "EditUsers");
-    public static readonly Permissions DeleteUsers = new(3, "DeleteUsers");
-    public static readonly Permissions CreateUsers = new(4, "CreateUsers");
-    public static readonly Permissions ChangeUserStatus = new(5, "ChangeUserStatus");
-    public static readonly Permissions ChangeUserRole = new(6, "ChangeUserRole");
+    public static readonly Permission ViewUsers = new(1, "ViewUsers");
+    public static readonly Permission EditUsers = new(2, "EditUsers");
+    public static readonly Permission DeleteUsers = new(3, "DeleteUsers");
+    public static readonly Permission CreateUsers = new(4, "CreateUsers");
+    public static readonly Permission ChangeUserStatus = new(5, "ChangeUserStatus");
+    public static readonly Permission ChangeUserRole = new(6, "ChangeUserRole");
 
-    // CONTRACTS
-    public static readonly Permissions ViewContracts = new(7, "ViewContracts");
-    public static readonly Permissions ViewAllContracts = new(8, "ViewAllContracts"); // 👈 важно
+    public static readonly Permission ViewContracts = new(7, "ViewContracts");
+    public static readonly Permission ViewAllContracts = new(8, "ViewAllContracts"); 
 
-    public static readonly Permissions EditContracts = new(9, "EditContracts");
-    public static readonly Permissions DeleteContracts = new(10, "DeleteContracts");
+    public static readonly Permission CancelContracts = new(9, "CancelContracts");
+    public static readonly Permission SignContracts = new(10, "SignContracts");
 
-    public static readonly Permissions CreateContracts = new(11, "CreateContracts"); 
-    public static readonly Permissions CreateContractsForOthers = new(12, "CreateContractsForOthers"); // 👈 ключевое
+    public static readonly Permission CreateContracts = new(11, "CreateContracts"); 
+    public static readonly Permission CreateContractsForOthers = new(12, "CreateContractsForOthers"); 
 
-    public static readonly Permissions ChangeContractStatus = new(13, "ChangeContractStatus");
+    public static readonly Permission ChangeContractStatus = new(13, "ChangeContractStatus");
 
-    // CARS
-    public static readonly Permissions ViewCars = new(14, "ViewCars");
-    public static readonly Permissions ViewAllCars = new(15, "ViewAllCars");
+    public static readonly Permission ViewCars = new(14, "ViewCars");
+    public static readonly Permission ViewAllCars = new(15, "ViewAllCars");
 
-    public static readonly Permissions EditCarsDetails = new(16, "EditCarsDetails");
-    public static readonly Permissions DeleteCars = new(17, "DeleteCars");
-    public static readonly Permissions CreateCars = new(18, "CreateCars");
-    public static readonly Permissions ChangeCarsStatus = new(19, "ChangeCarsStatus");
+    public static readonly Permission EditCarsDetails = new(16, "EditCarsDetails");
+    public static readonly Permission DeleteCars = new(17, "DeleteCars");
+    public static readonly Permission CreateCars = new(18, "CreateCars");
+    public static readonly Permission ChangeCarsStatus = new(19, "ChangeCarsStatus");
 
-    // RENTS
-    public static readonly Permissions ViewRents = new(20, "ViewRents");
-    public static readonly Permissions ViewAllRents = new(21, "ViewAllRents");
+    public static readonly Permission ViewRents = new(20, "ViewRents");
+    public static readonly Permission ViewAllRents = new(21, "ViewAllRents");
 
-    public static readonly Permissions CreateRent = new(22, "CreateRent");
-    public static readonly Permissions CreateRentForOthers = new(23, "CreateRentForOthers");
+    public static readonly Permission CreateRent = new(22, "CreateRent");
+    public static readonly Permission CreateRentForOthers = new(23, "CreateRentForOthers");
 
-    public static readonly Permissions EditRent = new(24, "EditRent");
-    public static readonly Permissions DeleteRent = new(25, "DeleteRent");
-    public static readonly Permissions ChangeRentStatus = new(26, "ChangeRentStatus");
+    public static readonly Permission EditRent = new(24, "EditRent");
+    public static readonly Permission DeleteRent = new(25, "DeleteRent");
+    public static readonly Permission ChangeRentStatus = new(26, "ChangeRentStatus");
 
-    public Permissions(int id, string name) : base(id, name) { }
+    public Permission(int id, string name) : base(id, name) { }
 
-    public static IReadOnlyCollection<Permissions> All =>
-        typeof(Permissions)
+    public static IReadOnlyCollection<Permission> All =>
+        typeof(Permission)
             .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
-            .Where(f => f.FieldType == typeof(Permissions))
-            .Select(f => (Permissions)f.GetValue(null)!)
+            .Where(f => f.FieldType == typeof(Permission))
+            .Select(f => (Permission)f.GetValue(null)!)
             .ToList();
 }

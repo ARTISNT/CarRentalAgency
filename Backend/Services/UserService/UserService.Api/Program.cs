@@ -64,7 +64,7 @@ builder.Services.AddTransient<IDomainEventDispatcher,  DomainEventDispatcher>();
 
 builder.Services.AddAuthorization(options =>
 {
-    foreach (var permission in Permissions.All)
+    foreach (var permission in Permission.All)
     {
         options.AddPolicy(permission.Name, 
             p => p.RequireClaim("permissions", permission.Name));

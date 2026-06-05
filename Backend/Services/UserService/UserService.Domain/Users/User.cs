@@ -90,9 +90,9 @@ public sealed class User : Entity, IAggregateRoot
         AddDomainEvent(new UserRoleChangedDomainEvent(Id,  role.ToString(), DateTime.UtcNow));
     }
 
-    private bool Can(Permissions.Permissions permissions)
+    private bool Can(Permissions.Permission permission)
     {
-        return Role.HasPermission(permissions);
+        return Role.HasPermission(permission);
     }
     
     public bool CanDeactivate(Guid targetUserId)
@@ -103,7 +103,7 @@ public sealed class User : Entity, IAggregateRoot
         if(Id == targetUserId)
             return true;
         
-        return Can(Permissions.Permissions.ChangeUserStatus);
+        return Can(Permissions.Permission.ChangeUserStatus);
     }
 
     public bool CanActivate(Guid targetUserId)
@@ -114,7 +114,7 @@ public sealed class User : Entity, IAggregateRoot
         if (Id == targetUserId)
             return true;
 
-        return Can(Permissions.Permissions.ChangeUserStatus);
+        return Can(Permission.ChangeUserStatus);
     }
 
     public bool CanView(Guid targetUserId)
@@ -125,7 +125,7 @@ public sealed class User : Entity, IAggregateRoot
         if(Id == targetUserId)
             return true;
         
-        return Can(Permissions.Permissions.ViewUsers);
+        return Can(Permission.ViewUsers);
     }
     
     
@@ -137,6 +137,6 @@ public sealed class User : Entity, IAggregateRoot
         if(Id == targetUserId)
             return true;
         
-        return Can(Permissions.Permissions.EditUsers);
+        return Can(Permission.EditUsers);
     }
 }
