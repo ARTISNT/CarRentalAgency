@@ -1,5 +1,5 @@
+using ContractService.Application.Exceptions.Contracts;
 using ContractService.Domain.Contracts;
-using ContractService.Domain.Exceptions.Contracts;
 using MediatR;
 
 namespace ContractService.Application.Features.ContractsTemplates.UpdateContractTemplateContent;

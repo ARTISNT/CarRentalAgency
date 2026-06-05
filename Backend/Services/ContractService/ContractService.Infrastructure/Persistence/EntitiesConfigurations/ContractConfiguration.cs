@@ -111,9 +111,54 @@ public class ContractConfiguration : IEntityTypeConfiguration<Contract>
             rental.Property(x => x.EndDate)
                 .IsRequired();
 
-            rental.Property(x => x.TotalPrice)
+            rental.Property(x => x.EstimatedPrice)
                 .HasColumnType("decimal(18,2)")
                 .IsRequired();
         });
+        
+        // ContractAdditions (owned collection)
+        builder.OwnsMany(x => x.ContractAdditions, additions =>
+        {
+            additions.ToTable("ContractAdditions");
+
+            additions.WithOwner()
+                .HasForeignKey("ContractId");
+
+            additions.HasKey("Id"); 
+
+            additions.Property(x => x.PreviousEndDate).IsRequired();
+            additions.Property(x => x.NewEndDate).IsRequired();
+            additions.Property(x => x.AdditionalCost).IsRequired();
+            additions.Property(x => x.CreatedAt).IsRequired();
+
+            // Snapshot
+            additions.OwnsOne(x => x.Template, template =>
+            {
+                template.Property(t => t.DocumentType).IsRequired();
+                template.Property(t => t.IsActive).IsRequired();
+            });
+        });
+
+        // ContractReturnAct (owned 1:1)
+        builder.OwnsOne(x => x.ReturnAct, act =>
+        {
+            act.ToTable("ContractReturnActs");
+
+            act.Property(x => x.Mileage).IsRequired();
+            act.Property(x => x.FuelLevel).IsRequired();
+            act.Property(x => x.PenaltyAmount).IsRequired();
+
+            act.Property(x => x.DamageDescription)
+                .HasMaxLength(1000);
+
+            act.Property(x => x.CreatedAt).IsRequired();
+
+            // Snapshot
+            act.OwnsOne(x => x.Template, template =>
+            {
+                template.Property(t => t.DocumentType).IsRequired();
+                template.Property(t => t.IsActive).IsRequired();
+            });
+        }); 
     }
 }

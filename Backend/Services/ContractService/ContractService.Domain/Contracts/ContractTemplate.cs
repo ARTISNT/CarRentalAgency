@@ -10,6 +10,7 @@ public sealed class ContractTemplate : Entity
     public string Content { get; private set; }
     public DateTime ValidFrom { get; private set; }
     public DateTime CreatedOn { get; private set; }
+    public DocumentType DocumentType { get; private set; }
     public bool IsActive { get; private set; }
 
     private const int MaxNameLength = 50;
@@ -21,6 +22,7 @@ public sealed class ContractTemplate : Entity
         string name,
         string content,
         DateTime validFrom, 
+        DocumentType documentType,
         int version)
     {
         SetName(name);
@@ -34,6 +36,7 @@ public sealed class ContractTemplate : Entity
 
         ValidFrom = validFrom;
         Version = version;
+        DocumentType = documentType ?? throw new ArgumentNullException(nameof(documentType));
 
         CreatedOn = DateTime.UtcNow;
         IsActive = true;

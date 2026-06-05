@@ -9,6 +9,7 @@ public class ClientContractStorageManager : IContractStorage
     private readonly string _basePath;
     
     private const string AdditionsFolder = "additions"; 
+    private const string ReturnActFolder = "return_act";
 
     public ClientContractStorageManager(IConfiguration configuration)
     {
@@ -45,11 +46,22 @@ public class ClientContractStorageManager : IContractStorage
 
         return Path.Combine(directory, fileName);
     }
+    
+    
+    public string GetReturnActPath(Guid clientId, Contract contract)
+    {
+        string directory = Path.Combine(GetClientDirectory(clientId, contract), ReturnActFolder);
+
+        string fileName = $"{contract.Id}_return_act.pdf";
+
+        return Path.Combine(directory, fileName);
+    }
 
     public void EnsureDirectoriesExist(Guid clientId, Contract contract)
     {
         Directory.CreateDirectory(GetClientDirectory(clientId, contract));
         Directory.CreateDirectory(Path.Combine(GetClientDirectory(clientId, contract), AdditionsFolder));
+        Directory.CreateDirectory(Path.Combine(GetClientDirectory(clientId, contract), ReturnActFolder));
     }
 
     private string GetClientDirectory(Guid clientId, Contract contract)

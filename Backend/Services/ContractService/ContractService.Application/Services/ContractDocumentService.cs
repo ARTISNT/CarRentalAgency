@@ -12,10 +12,15 @@ public class ContractDocumentService(
     public async Task GenerateContract(Guid clientId, string contractContent, Contract contract)
     {
         storage.EnsureDirectoriesExist(clientId, contract);
-        
         string path = storage.GetContractPath(clientId, contract);
-        
         await pdfGenerator.Generate(contractContent, path);
+    }
+    
+    public async Task GenerateAddition(Guid clientId, string additionContent, Contract contract)
+    {
+        storage.EnsureDirectoriesExist(clientId, contract);
+        string path = storage.GetAdditionPath(clientId, contract);
+        await pdfGenerator.Generate(additionContent, path);
     }
 
     public void SignContract(Guid clientId, Contract contract)

@@ -13,6 +13,7 @@ public class CreateContractTemplateCommandHandler(
             request.Name,
             request.Content,
             request.ValidFrom,
+            request.DocumentType,
             request.Version);
 
         await contractTemplateRepository.AddContractTemplateAsync(template, cancellationToken);

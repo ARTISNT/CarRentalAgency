@@ -30,5 +30,10 @@ public class ContractTemplateConfiguration : IEntityTypeConfiguration<ContractTe
 
         builder.Property(x => x.IsActive)
             .IsRequired();
+        
+        builder.Property(x => x.DocumentType)
+            .HasConversion(
+                v => v.Name,
+                v => DocumentType.FromName<DocumentType>(v)).IsRequired(); 
     }
 }

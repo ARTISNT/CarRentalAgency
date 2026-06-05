@@ -28,11 +28,20 @@ namespace ContractService.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CancellationReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("ContractTemplateId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid>("RentalId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -56,6 +65,10 @@ namespace ContractService.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -127,6 +140,111 @@ namespace ContractService.Infrastructure.Persistence.Migrations
                                 .HasForeignKey("ContractId");
                         });
 
+                    b.OwnsOne("ContractService.Domain.Contracts.ContractTemplateSnapshot", "Template", b1 =>
+                        {
+                            b1.Property<Guid>("ContractId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("Content")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<string>("DocumentType")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<bool>("IsActive")
+                                .HasColumnType("bit");
+
+                            b1.Property<string>("Name")
+                                .IsRequired()
+                                .HasMaxLength(50)
+                                .HasColumnType("nvarchar(50)");
+
+                            b1.Property<DateTime>("ValidFrom")
+                                .HasColumnType("datetime2");
+
+                            b1.Property<int>("Version")
+                                .HasColumnType("int");
+
+                            b1.HasKey("ContractId");
+
+                            b1.ToTable("Contracts");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ContractId");
+                        });
+
+                    b.OwnsMany("ContractService.Domain.Contracts.ContractAddition", "ContractAdditions", b1 =>
+                        {
+                            b1.Property<int>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int");
+
+                            SqlServerPropertyBuilderExtensions.UseIdentityColumn(b1.Property<int>("Id"));
+
+                            b1.Property<decimal>("AdditionalCost")
+                                .HasColumnType("decimal(18,2)");
+
+                            b1.Property<Guid>("ContractId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<DateTime>("CreatedAt")
+                                .HasColumnType("datetime2");
+
+                            b1.Property<DateTime>("NewEndDate")
+                                .HasColumnType("datetime2");
+
+                            b1.Property<DateTime>("PreviousEndDate")
+                                .HasColumnType("datetime2");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("ContractId");
+
+                            b1.ToTable("ContractAdditions", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("ContractId");
+
+                            b1.OwnsOne("ContractService.Domain.Contracts.ContractTemplateSnapshot", "Template", b2 =>
+                                {
+                                    b2.Property<int>("ContractAdditionId")
+                                        .HasColumnType("int");
+
+                                    b2.Property<string>("Content")
+                                        .IsRequired()
+                                        .HasColumnType("nvarchar(max)");
+
+                                    b2.Property<string>("DocumentType")
+                                        .IsRequired()
+                                        .HasColumnType("nvarchar(max)");
+
+                                    b2.Property<bool>("IsActive")
+                                        .HasColumnType("bit");
+
+                                    b2.Property<string>("Name")
+                                        .IsRequired()
+                                        .HasColumnType("nvarchar(max)");
+
+                                    b2.Property<DateTime>("ValidFrom")
+                                        .HasColumnType("datetime2");
+
+                                    b2.Property<int>("Version")
+                                        .HasColumnType("int");
+
+                                    b2.HasKey("ContractAdditionId");
+
+                                    b2.ToTable("ContractAdditions");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("ContractAdditionId");
+                                });
+
+                            b1.Navigation("Template")
+                                .IsRequired();
+                        });
+
                     b.OwnsOne("ContractService.Domain.Contracts.ContractAutoSnapshot", "Car", b1 =>
                         {
                             b1.Property<Guid>("ContractId")
@@ -165,35 +283,70 @@ namespace ContractService.Infrastructure.Persistence.Migrations
                                 .HasForeignKey("ContractId");
                         });
 
-                    b.OwnsOne("ContractService.Domain.Contracts.ContractTemplateSnapshot", "Template", b1 =>
+                    b.OwnsOne("ContractService.Domain.Contracts.ContractReturnAct", "ReturnAct", b1 =>
                         {
                             b1.Property<Guid>("ContractId")
                                 .HasColumnType("uniqueidentifier");
 
-                            b1.Property<string>("Content")
-                                .IsRequired()
-                                .HasColumnType("nvarchar(max)");
-
-                            b1.Property<bool>("IsActive")
-                                .HasColumnType("bit");
-
-                            b1.Property<string>("Name")
-                                .IsRequired()
-                                .HasMaxLength(50)
-                                .HasColumnType("nvarchar(50)");
-
-                            b1.Property<DateTime>("ValidFrom")
+                            b1.Property<DateTime>("CreatedAt")
                                 .HasColumnType("datetime2");
 
-                            b1.Property<int>("Version")
+                            b1.Property<string>("DamageDescription")
+                                .HasMaxLength(1000)
+                                .HasColumnType("nvarchar(1000)");
+
+                            b1.Property<decimal>("FuelLevel")
+                                .HasColumnType("decimal(18,2)");
+
+                            b1.Property<int>("Mileage")
                                 .HasColumnType("int");
+
+                            b1.Property<decimal>("PenaltyAmount")
+                                .HasColumnType("decimal(18,2)");
 
                             b1.HasKey("ContractId");
 
-                            b1.ToTable("Contracts");
+                            b1.ToTable("ContractReturnActs", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("ContractId");
+
+                            b1.OwnsOne("ContractService.Domain.Contracts.ContractTemplateSnapshot", "Template", b2 =>
+                                {
+                                    b2.Property<Guid>("ContractReturnActContractId")
+                                        .HasColumnType("uniqueidentifier");
+
+                                    b2.Property<string>("Content")
+                                        .IsRequired()
+                                        .HasColumnType("nvarchar(max)");
+
+                                    b2.Property<string>("DocumentType")
+                                        .IsRequired()
+                                        .HasColumnType("nvarchar(max)");
+
+                                    b2.Property<bool>("IsActive")
+                                        .HasColumnType("bit");
+
+                                    b2.Property<string>("Name")
+                                        .IsRequired()
+                                        .HasColumnType("nvarchar(max)");
+
+                                    b2.Property<DateTime>("ValidFrom")
+                                        .HasColumnType("datetime2");
+
+                                    b2.Property<int>("Version")
+                                        .HasColumnType("int");
+
+                                    b2.HasKey("ContractReturnActContractId");
+
+                                    b2.ToTable("ContractReturnActs");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("ContractReturnActContractId");
+                                });
+
+                            b1.Navigation("Template")
+                                .IsRequired();
                         });
 
                     b.OwnsOne("ContractService.Domain.Contracts.RentalSnapshot", "Rental", b1 =>
@@ -204,11 +357,11 @@ namespace ContractService.Infrastructure.Persistence.Migrations
                             b1.Property<DateTime>("EndDate")
                                 .HasColumnType("datetime2");
 
+                            b1.Property<decimal>("EstimatedPrice")
+                                .HasColumnType("decimal(18,2)");
+
                             b1.Property<DateTime>("StartDate")
                                 .HasColumnType("datetime2");
-
-                            b1.Property<decimal>("TotalPrice")
-                                .HasColumnType("decimal(18,2)");
 
                             b1.HasKey("ContractId");
 
@@ -224,8 +377,12 @@ namespace ContractService.Infrastructure.Persistence.Migrations
                     b.Navigation("Client")
                         .IsRequired();
 
+                    b.Navigation("ContractAdditions");
+
                     b.Navigation("Rental")
                         .IsRequired();
+
+                    b.Navigation("ReturnAct");
 
                     b.Navigation("Template")
                         .IsRequired();

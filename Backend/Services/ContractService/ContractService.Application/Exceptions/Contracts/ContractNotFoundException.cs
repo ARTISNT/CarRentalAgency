@@ -1,4 +1,4 @@
-namespace ContractService.Domain.Exceptions.Contracts;
+namespace ContractService.Application.Exceptions.Contracts;
 
 public class ContractNotFoundException : Exception
 {

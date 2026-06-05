@@ -12,6 +12,8 @@
         <PackageReference Include="AutoMapper" Version="16.1.1" />
         <PackageReference Include="itext" Version="8.0.5" />
         <PackageReference Include="itext.bouncy-castle-adapter" Version="8.0.5" />
+        <PackageReference Include="MassTransit" Version="8.3.6" />
+        <PackageReference Include="MassTransit.RabbitMQ" Version="8.3.6" />
         <PackageReference Include="MediatR" Version="14.1.0" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
@@ -28,10 +30,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\ContractService.Infrastructure\ContractService.Infrastructure.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="MappingRequests\" />
     </ItemGroup>
 
 </Project>

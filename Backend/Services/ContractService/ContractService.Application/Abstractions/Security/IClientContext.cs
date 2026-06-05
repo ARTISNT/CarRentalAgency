@@ -1,7 +1,7 @@
 namespace ContractService.Application.Abstractions.Security;
 
-public interface IUserContext
+public interface IClientContext
 {
-    Guid UserId { get; }
+    Guid ClientId { get; }
     string[] Permissions { get; }
 }

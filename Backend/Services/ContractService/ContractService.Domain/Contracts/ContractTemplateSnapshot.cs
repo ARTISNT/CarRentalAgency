@@ -7,4 +7,5 @@ public record ContractTemplateSnapshot(
     string Name,
     string Content,
     DateTime ValidFrom,
+    string DocumentType,
     bool IsActive) : IValueObject;

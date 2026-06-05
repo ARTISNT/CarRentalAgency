@@ -12,10 +12,13 @@ public class ContractMappingResponseProfile : Profile
 {
     public ContractMappingResponseProfile()
     {
-        CreateMap<ContractTemplate, ContractTemplateSnapshot>();
         CreateMap<ClientForContractResponse, ClientSnapshot>();
         CreateMap<CarForContractResponse, ContractAutoSnapshot>();
         CreateMap<RentalForContractResponse, RentalSnapshot>(); 
+        
+        CreateMap<ContractTemplate, ContractTemplateSnapshot>()
+            .ForMember(dest => dest.DocumentType,
+                opt => opt.MapFrom(src => src.DocumentType.Name));
         
         CreateMap<Contract, ContractListResponse>()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
@@ -25,7 +28,7 @@ public class ContractMappingResponseProfile : Profile
                 $"{src.Car.Brand} {src.Car.Model} ({src.Car.LicensePlate})"))
             .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.Rental.StartDate))
             .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.Rental.EndDate))
-            .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.Rental.TotalPrice))
+            .ForMember(dest => dest.EstimatedPrice, opt => opt.MapFrom(src => src.Rental.EstimatedPrice))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.Name))
             .ForMember(dest => dest.PdfPath, opt => opt.Ignore()); 
         

@@ -4,9 +4,9 @@ using Microsoft.AspNetCore.Http;
 
 namespace ContractService.Infrastructure.Security;
 
-public class UserContext(IHttpContextAccessor accessor) : IUserContext
+public class ClientContext(IHttpContextAccessor accessor) : IClientContext
 {
-    public Guid UserId =>
+    public Guid ClientId =>
         Guid.Parse(
             accessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)!.Value!
         );

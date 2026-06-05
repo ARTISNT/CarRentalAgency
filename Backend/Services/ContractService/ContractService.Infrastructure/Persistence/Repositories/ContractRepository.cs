@@ -1,13 +1,21 @@
 using ContractService.Domain.Contracts;
+using ContractService.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace ContractService.Infrastructure.Persistence.Repositories;
 
 public class ContractRepository(ContractServiceContext dbContext) : IContractRepository
 {
-    public async Task<IReadOnlyCollection<Contract>> GetContractsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyCollection<Contract>> GetContractsAsync(ContractSpecification contractSpecification,
+        CancellationToken cancellationToken = default)
     {
-        return await dbContext.Contracts.ToListAsync(cancellationToken);
+        return await dbContext.Contracts.ApplyFiltering(contractSpecification).ToListAsync(cancellationToken);
+    }
+
+    public async Task<Contract?> GetContractByRentalIdAsync(Guid rentalId,
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Contracts.FirstOrDefaultAsync(c => c.RentalId == rentalId, cancellationToken);
     }
 
     public async Task<Contract?> GetContractAsync(Guid contractId, CancellationToken cancellationToken = default)

@@ -12,7 +12,7 @@ public class ContractListResponse
 
     public DateTime EndDate { get; init; }
 
-    public decimal TotalPrice { get; init; }
+    public decimal EstimatedPrice { get; init; }
 
     public string Status { get; init; }
 

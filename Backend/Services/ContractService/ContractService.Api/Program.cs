@@ -2,17 +2,22 @@ using System.Text;
 using ContractService.Application.Abstractions.External;
 using ContractService.Application.Abstractions.Security;
 using ContractService.Application.Abstractions.Services;
+using ContractService.Application.Authorization;
+using ContractService.Application.Common;
 using ContractService.Application.Features.Contracts.CreateContract;
 using ContractService.Application.Features.Contracts.GetContract;
+using ContractService.Application.Options;
 using ContractService.Application.Services;
 using ContractService.Domain.Contracts;
 using ContractService.Infrastructure.ExternalServices;
+using ContractService.Infrastructure.Messaging.Consumers;
 using ContractService.Infrastructure.Persistence;
 using ContractService.Infrastructure.Persistence.Repositories;
 using ContractService.Infrastructure.Security;
 using ContractService.Infrastructure.Services.ContractsGeneration;
 using ContractService.Infrastructure.Services.ContractsSigning;
 using ContractService.OpenApiConfiguration;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -36,6 +41,9 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(
     typeof(CreateContractCommand).Assembly,
     typeof(Program).Assembly));
 
+builder.Services.Configure<DocumentTemplateOptions>(
+    builder.Configuration.GetSection("DocumentBasicIdTemplates"));
+
 builder.Services.AddSingleton<IInternalJwtProvider, InternalJwtProvider>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<IContractTemplateRepository, ContractTemplateTemplateRepository>();
@@ -45,8 +53,10 @@ builder.Services.AddScoped<IClientExternalService, ClientExternalService>();
 builder.Services.AddScoped<IRentalExternalService, RentalExternalService>();
 builder.Services.AddScoped<IPdfContractGenerator, PdfContractGenerator>();
 builder.Services.AddScoped<IContractStorage, ClientContractStorageManager>();
+builder.Services.AddScoped<IContractAuthorizationPolicy, ContractAuthorizationPolicy>();
+builder.Services.AddScoped<IContractAuthorizationService, ContractAuthorizationService>();
 builder.Services.AddScoped<ContractDocumentService>();
-builder.Services.AddScoped<IUserContext, UserContext>();
+builder.Services.AddScoped<IClientContext, ClientContext>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IContractSigningService, ContractSigningService>();
 builder.Services.AddScoped<IContractCertificateProvider, ContractCertificateProvider>();
@@ -67,7 +77,13 @@ builder.Services.AddHttpClient("RentalApi", client =>
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(cfg =>
+{
+    foreach (var permission in Permissions.AllPermissions)
+    {
+        cfg.AddPolicy(permission, policy => policy.RequireClaim("permissions", permission));
+    }
+});
 
 builder.Services.AddAuthentication(options =>
     {
@@ -104,6 +120,27 @@ builder.Services.AddAuthentication(options =>
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["InternalJwt:SecretKey"]))
         };
     });
+builder.Services.AddMassTransit(busConfigurator =>
+{
+    busConfigurator.SetKebabCaseEndpointNameFormatter();
+    busConfigurator.AddConsumer<RentalRenewedConsumer>();
+    
+    busConfigurator.UsingRabbitMq((context, configurator)=>
+    {
+        string host = builder.Configuration["MessageBroker:Host"] ?? "localhost";
+        ushort port = builder.Configuration.GetValue<ushort>("MessageBroker:Port", 5672); 
+        
+        
+        configurator.Host(host, port, "/", h =>
+        {
+            h.Username(builder.Configuration["MessageBroker:User"]);
+            h.Password(builder.Configuration["MessageBroker:Password"]);
+        });
+
+        configurator.ConfigureEndpoints(context);
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
