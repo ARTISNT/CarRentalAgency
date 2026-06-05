@@ -10,4 +10,9 @@ public class UserContext(IHttpContextAccessor accessor) : IUserContext
         Guid.Parse(
             accessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)!.Value!
         );
+
+    public string[] Permissions => accessor.HttpContext?.User
+        .FindAll("permissions")
+        .Select(c => c.Value)
+        .ToArray() ?? Array.Empty<string>();
 }
