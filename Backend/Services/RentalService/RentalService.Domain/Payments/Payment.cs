@@ -1,5 +1,4 @@
 using RentalService.Domain.Common;
-using RentalService.Domain.Rentals.PricingPolicies;
 
 namespace RentalService.Domain.Payments;
 
@@ -14,6 +13,16 @@ public class Payment : Entity, IAggregateRoot
     public PaymentStatus Status { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
 
+    public Money Overpayment =>
+        PaidAmount.Amount > RequiredAmount.Amount
+            ? PaidAmount - RequiredAmount
+            : Money.Zero(RequiredAmount.Currency);
+
+    public Money Underpayment =>
+        RequiredAmount.Amount > PaidAmount.Amount
+            ? RequiredAmount - PaidAmount
+            : Money.Zero(RequiredAmount.Currency); 
+    
     public IReadOnlyCollection<PaymentTransaction> Transactions =>
         _transactions.AsReadOnly();
 
@@ -70,11 +79,11 @@ public class Payment : Entity, IAggregateRoot
         if (finalAmount.Amount <= 0)
             throw new ArgumentException(
                 "Final amount invalid");
-
+        
         EnsureSameCurrency(finalAmount);
 
         FinalAmount = finalAmount;
-
+        
         RecalculateStatus();
 
         // AddDomainEvent(
@@ -177,7 +186,7 @@ public class Payment : Entity, IAggregateRoot
                 "Refund amount invalid");
 
         EnsureSameCurrency(amount);
-
+        
         if (amount.Amount > PaidAmount.Amount)
             throw new InvalidOperationException(
                 "Refund exceeds paid amount");

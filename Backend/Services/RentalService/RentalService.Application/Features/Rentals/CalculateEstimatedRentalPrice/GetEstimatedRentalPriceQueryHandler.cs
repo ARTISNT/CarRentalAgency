@@ -12,11 +12,12 @@ public class GetEstimatedRentalPriceQueryHandler(
 {
     public async Task<decimal> Handle(GetEstimatedRentalPriceQuery request, CancellationToken cancellationToken)
     {
-        var rental = await rentalRepository.GetRentalAsync(request.RentalId) ??
+        var rental = await rentalRepository.GetRentalAsync(request.RentalId, cancellationToken) ??
                      throw new KeyNotFoundException("Rental not found");
+        
         var pricingPolicies = pricingPoliciesFactory.Create();
 
-        var baseCost = rentalPricingDomainService.CalculateBaseCostWithDiscount(pricingPolicies, rental, "BYN", request.PromoCode);
+        var baseCost = rentalPricingDomainService.CalculateEstimatedCost(pricingPolicies, rental, "BYN");
         
         return baseCost.Amount;
     }

@@ -8,12 +8,12 @@
 
     <ItemGroup>
       <PackageReference Include="AutoMapper" Version="16.1.1" />
-      <PackageReference Include="MassTransit.RabbitMQ" Version="9.1.0" />
       <PackageReference Include="MediatR" Version="14.1.0" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\RentalService.Domain\RentalService.Domain.csproj" />
+        <ProjectReference Include="..\..\Contracts\Contracts\Contracts.csproj" />
     </ItemGroup>
 
 </Project>

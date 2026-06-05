@@ -19,9 +19,10 @@ public class GetRentalForContractQueryHandler(
 
         var rentalForContract = new RentalForContractResponse()
         {
+            RentalId = rental.Id,
             EndDate = rental.EndDate,
             StartDate = rental.StartDate,
-            TotalPrice = payment.EstimatedAmount.Amount
+            EstimatedPrice= payment.EstimatedAmount.Amount
         };
         
         return rentalForContract;

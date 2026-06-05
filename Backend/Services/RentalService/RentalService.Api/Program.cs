@@ -8,11 +8,15 @@ using RentalService.Application.Features.Rentals.CreateRental;
 using RentalService.Application.Features.Rentals.EndRental;
 using RentalService.Application.Features.Rentals.GetRental;
 using RentalService.Application.Features.Rentals.GetRentals;
+using RentalService.Application.Features.Rentals.RenewRental;
+using RentalService.Domain.DomainEvents;
 using RentalService.Domain.Payments;
 using RentalService.Domain.Rentals;
 using RentalService.Domain.Services;
 using RentalService.Infrastructure;
 using RentalService.Infrastructure.Common;
+using RentalService.Infrastructure.DomainEvents;
+using RentalService.Infrastructure.Messaging;
 using RentalService.Infrastructure.Repositories;
 using RentalService.Infrastructure.Services.ExternalServices;
 using RentalService.Infrastructure.Services.InternalServices;
@@ -37,10 +41,12 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(
 builder.Services.AddAutoMapper(cfg => { }, typeof(RentalCarResponse).Assembly);
 
 builder.Services.AddScoped<IRentalRepository, RentalRepository>();
+builder.Services.AddScoped<IIntegrationEventPublisher, MassTransitIntegrationEventPublisher>();
 builder.Services.AddScoped<IPricingPoliciesFactory, PricingPoliciesFactory>();
 builder.Services.AddScoped<IJsonPriceSettingProvider, JsonPriceSettingProvider>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<RentalPricingDomainService>();
+builder.Services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 builder.Services.AddScoped<IJwtProvider, InternalJwtProvider>();
 
 builder.Services.AddHttpClient("UserApi", client =>
@@ -96,21 +102,24 @@ builder.Services.AddAuthentication(options =>
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["InternalJwt:SecretKey"]))
         };
     });
-/*
 builder.Services.AddMassTransit(busConfigurator =>
 {
     busConfigurator.SetKebabCaseEndpointNameFormatter();
 
     busConfigurator.UsingRabbitMq((context, configurator)=>
     {
-        configurator.Host(new Uri(builder.Configuration["MessageBroker:Host"]), h =>
+        string host = builder.Configuration["MessageBroker:Host"] ?? "localhost";
+        ushort port = builder.Configuration.GetValue<ushort>("MessageBroker:Port", 5672); 
+        
+        configurator.Host(host, port, "/", h =>
         {
-            h.Username(builder.Configuration["MessageBroker:Username"]);
+            h.Username(builder.Configuration["MessageBroker:User"]);
             h.Password(builder.Configuration["MessageBroker:Password"]);
         });
 
+        configurator.ConfigureEndpoints(context);
     });
-});*/
+});
 
 var app = builder.Build();
 

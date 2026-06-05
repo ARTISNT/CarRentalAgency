@@ -1,3 +1,4 @@
+using Contracts.RentalEvents;
 using MediatR;
 using RentalService.Application.Common;
 using RentalService.Domain.Payments;
@@ -10,26 +11,42 @@ public class RenewRentalCommandHandler(
     IRentalRepository rentalRepository, 
     IPaymentRepository paymentRepository,
     RentalPricingDomainService pricingDomainService, 
-    IPricingPoliciesFactory policiesFactory) 
+    IPricingPoliciesFactory policiesFactory,
+    IIntegrationEventPublisher publisher) 
     : IRequestHandler<RenewRentalCommand>
 {
     public async Task Handle(RenewRentalCommand request, CancellationToken cancellationToken)
     {
-        var rental = await rentalRepository.GetRentalAsync(request.Id) ?? 
+        var rental = await rentalRepository.GetRentalAsync(request.Id, cancellationToken) ?? 
                      throw new KeyNotFoundException("Rental not found");
         
         rental.RenewRental(request.NewDate);
         var pricingPolicies = policiesFactory.Create();
 
-        var payment = await paymentRepository.GetPaymentByRentIdAsync(rental.Id);
+        var payment = await paymentRepository.GetPaymentByRentIdAsync(rental.Id, cancellationToken);
+        var oldEstimatedAmount = payment.EstimatedAmount; 
         
         var newTotalCost = 
-            pricingDomainService.CalculateTotal(pricingPolicies, rental, payment, 
-            payment.DepositAmount.Currency);
+            pricingDomainService.CalculateEstimatedCost(pricingPolicies,
+                rental,
+                payment.EstimatedAmount.Currency);
         
         payment.UpdateEstimatedAmount(newTotalCost);
+
+        var additionalCost = 
+            newTotalCost - oldEstimatedAmount;
         
-        await rentalRepository.UpdateRentalAsync(rental);
-        await paymentRepository.UpdatePaymentAsync(payment);
+        if (additionalCost.Amount < 0)
+            payment.Refund(payment.Overpayment, "");
+        
+        var integrationEvent = new RentalRenewedIntegrationEvent(
+            rental!.Id,
+            rental.RentCarId,
+            rental.EndDate,
+            additionalCost.Amount);
+
+        await publisher.Publish(integrationEvent, cancellationToken);
+        await rentalRepository.UpdateRentalAsync(rental, cancellationToken);
+        await paymentRepository.UpdatePaymentAsync(payment, cancellationToken);
     }
 }

@@ -3,7 +3,6 @@ using RentalService.Domain.Rentals;
 using RentalService.Domain.Rentals.PricingPolicies;
 
 namespace RentalService.Domain.Services;
-
 public class RentalPricingDomainService
 {
     public Money CalculateBaseCost(
@@ -11,54 +10,103 @@ public class RentalPricingDomainService
         Rental rental,
         string currency)
     {
-        return new Money(pricingPolicy.CalculateBasePrice(
-            rental.StartDate,
-            rental.EndDate,
-            rental.RentCarSnapshot.PricePerHour), currency);
+        return new Money(
+            pricingPolicy.CalculateBasePrice(
+                rental.StartDate,
+                rental.EndDate,
+                rental.RentCarSnapshot.PricePerHour),
+            currency);
     }
 
-    public Money CalculateBaseCostWithDiscount(
+    public Money CalculateEstimatedCost(
         PricingPolicies pricingPolicies,
         Rental rental,
-        string currency,
-        string? promoCode = null)
+        string currency)
     {
-        var totalHours = pricingPolicies.BasePricingPolicy.GetTotalHours(
-            rental.StartDate,
-            rental.EndDate);
-        
-        var baseCost = CalculateBaseCost(pricingPolicies.BasePricingPolicy, rental, currency);
-    
-        var discount = new Money(pricingPolicies.DiscountPolicy.CalculateDiscount(
-            baseCost.Amount,
-            totalHours,
-            promoCode), currency);
-        
-        return baseCost - discount;
+        var totalHours =
+            pricingPolicies.BasePricingPolicy.GetTotalHours(
+                rental.StartDate,
+                rental.EndDate);
+
+        var baseCost =
+            CalculateBaseCost(
+                pricingPolicies.BasePricingPolicy,
+                rental,
+                currency);
+
+        var discount =
+            pricingPolicies.DiscountPolicy.CalculateDiscount(
+                baseCost.Amount,
+                totalHours,
+                rental.PromoCode);
+
+        return new Money(
+            baseCost.Amount - discount,
+            currency);
+    }
+
+    public Money CalculateActualCost(
+        PricingPolicies pricingPolicies,
+        Rental rental,
+        DateTime actualReturnDate,
+        string currency)
+    {
+        var actualBaseCost =
+            pricingPolicies.BasePricingPolicy.CalculateBasePrice(
+                rental.StartDate,
+                actualReturnDate,
+                rental.RentCarSnapshot.PricePerHour);
+
+        var actualHours =
+            pricingPolicies.BasePricingPolicy.GetTotalHours(
+                rental.StartDate,
+                actualReturnDate);
+
+        var discount =
+            pricingPolicies.DiscountPolicy.CalculateDiscount(
+                actualBaseCost,
+                actualHours,
+                rental.PromoCode);
+
+        return new Money(
+            actualBaseCost - discount,
+            currency);
     }
 
     public Money CalculateFine(
-        FinePolicy finePolicy,
-        Rental rental,
-        string currency)
-    {
-        if (!rental.ReturnDate.HasValue)
-            return Money.Zero(currency);
-
-        return new Money(finePolicy.CalculateFine(
-            rental.EndDate,
-            rental.ReturnDate,
-            rental.RentCarSnapshot.PricePerHour), currency);
-    } 
-    
-    public Money CalculateTotal(
         PricingPolicies pricingPolicies,
         Rental rental,
-        Payment rentalPayment,
+        DateTime actualReturnDate,
         string currency)
     {
-        var fine = CalculateFine(pricingPolicies.FinePolicy, rental, currency);
+        return new Money(
+            pricingPolicies.FinePolicy.CalculateFine(
+                rental.EndDate,
+                actualReturnDate,
+                rental.RentCarSnapshot.PricePerHour),
+            currency);
+    }
 
-        return rentalPayment.EstimatedAmount + fine;
+    public Money CalculateFinalCost(
+        PricingPolicies pricingPolicies,
+        Rental rental,
+        DateTime actualReturnDate,
+        string currency)
+    {
+        var actualCost =
+            CalculateActualCost(
+                pricingPolicies,
+                rental,
+                actualReturnDate,
+                currency);
+
+        var fine =
+            CalculateFine(
+                pricingPolicies,
+                rental,
+                actualReturnDate,
+                currency);
+
+        return actualCost + fine;
     }
 }

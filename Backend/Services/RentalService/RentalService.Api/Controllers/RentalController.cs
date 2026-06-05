@@ -60,7 +60,7 @@ public class RentalController(ISender sender) : ControllerBase
     [Route("EndRental/{id}")]
     public async Task<IActionResult> EndRental([FromRoute] Guid id, [FromBody] EndRentalRequest endRentalRequest)
     {
-        await sender.Send(new EndRentalCommand(id, endRentalRequest.ReturnDate, endRentalRequest.PromoCode));
+        await sender.Send(new EndRentalCommand(id, endRentalRequest.ReturnDate));
         return Ok();
     }
 
