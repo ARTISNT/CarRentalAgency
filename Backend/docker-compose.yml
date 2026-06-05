@@ -2,6 +2,20 @@ version: '3.9'
 
 services:
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Web UI
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+
   mssql-users:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: UserDb
@@ -96,7 +110,9 @@ services:
 
   rental-service:
     build:
-      context: ./Services/RentalService
+      context: .
+      dockerfile: Services/RentalService/Dockerfile
+
     ports:
       - "5003:8080"
     environment:
@@ -110,6 +126,9 @@ services:
         Password=${MSSQL_PASSWORD};
         TrustServerCertificate=True;
 
+      MessageBroker__User: ${RABBITMQ_DEFAULT_USER}
+      MessageBroker__Password: ${RABBITMQ_DEFAULT_PASS}
+
       InternalJwt__SecretKey: ${InternalJWT_KEY}
       InternalJwt__Issuer: ${InternalJWT_ISSUER}
       InternalJwt__Audience: ${InternalJWT_AUDIENCE}
@@ -120,7 +139,8 @@ services:
 
   contract-service:
     build:
-      context: ./Services/ContractService
+      context: .
+      dockerfile: Services/ContractService/Dockerfile      
     ports:
       - "5004:8080"
     volumes:
@@ -137,6 +157,8 @@ services:
         Password=${MSSQL_PASSWORD};
         TrustServerCertificate=True;
 
+      MessageBroker__User: ${RABBITMQ_DEFAULT_USER}
+      MessageBroker__Password: ${RABBITMQ_DEFAULT_PASS}
       InternalJwt__SecretKey: ${InternalJWT_KEY}
       InternalJwt__Issuer: ${InternalJWT_ISSUER}
       InternalJwt__Audience: ${InternalJWT_AUDIENCE}
@@ -156,8 +178,21 @@ services:
       ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_ENVIRONMENT: Development
 
+      MessageBroker__Host: rabbitmq
+      MessageBroker__User: ${RABBITMQ_DEFAULT_USER}
+      MessageBroker__Password: ${RABBITMQ_DEFAULT_PASS}
+      Smtp__Host: ${SMTP_HOST}
+      Smtp__Port: ${SMTP_PORT}
+      Smtp__UseSsl: ${SMTP_USE_SSL}
+      Smtp__Username: ${SMTP_USERNAME}
+      Smtp__Password: ${SMTP_PASSWORD}
+      Smtp__FromAddress: ${SMTP_FROM_ADDRESS}
+      Smtp__FromName: ${SMTP_FROM_NAME}
+      Smtp__ToAddress: ${SMTP_TO_ADDRESS}
+
 volumes:
   mssql-users-data:
   mssql-rentals-data:
   mssql-cars-data:
   mssql-contracts-data:
+  rabbitmq_data:
