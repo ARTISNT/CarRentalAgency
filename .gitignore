@@ -429,3 +429,12 @@ gitignore
 
 # Generated storage files
 Storage/
+
+# Backup files
+backup_name.bak
+
+# Testing documentation
+ТЕСТИРОВАНИЕ.md
+
+# Legacy/separate services
+Backend/Services/InternetMarket.PaymentService/
