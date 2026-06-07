@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UserService.Api.Requests;
 using UserService.Application.Features.Users.ActivateUser;
+using UserService.Domain.Users;
 using UserService.Application.Features.Users.AddUserPassport;
 using UserService.Application.Features.Users.DeactivateUser;
 using UserService.Application.Features.Users.GetUserPersonal;
@@ -20,9 +21,9 @@ public class UserController(ISender sender) : ControllerBase
 {
     [HttpGet]
     [Authorize(Policy = "ViewUsers")]
-    public async Task<IActionResult> GetUsers()
+    public async Task<IActionResult> GetUsers([FromQuery] UserSpecification specification)
     {
-        var users = await sender.Send(new GetUsersQuery());
+        var users = await sender.Send(new GetUsersQuery(specification));
         return Ok(users);
     }
     
