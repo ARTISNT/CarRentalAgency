@@ -27,8 +27,23 @@ public class CarMappingRequests : Profile
                 new CarModelInfo(src.Model, src.Brand, src.Generation, src.Variant, src.IsFacelift)))
             .ForCtorParam(nameof(AddCarCommand.CarTechInfo), opt => opt.MapFrom(src =>
                 new CarTechInfo(
+                    src.FuelCurrentLiters.HasValue &&
+                    src.FuelCapacityLiters.HasValue
+                        ? new FuelTank(
+                            src.FuelCurrentLiters.Value,
+                            src.FuelCapacityLiters.Value)
+                        : null,
+                    src.BatteryCurrentKWh.HasValue &&
+                    src.BatteryCapacityKWh.HasValue
+                        ? new BatteryLevel(
+                            src.BatteryCurrentKWh.Value,
+                            src.BatteryCapacityKWh.Value)
+                        : null,
                     src.Mileage,
-                    new EngineDetails(src.HorsePower, src.EngineVolume, src.PowerReverse,
+                    new EngineDetails(
+                        src.HorsePower,
+                        src.EngineVolume,
+                        src.PowerReverse,
                         EngineType.FromName<EngineType>(src.EngineType)),
                     BodyStyle.FromName<BodyStyle>(src.BodyStyle),
                     TransmissionType.FromName<TransmissionType>(src.TransmissionType),
@@ -55,9 +70,24 @@ public class CarMappingRequests : Profile
                     src.Dto.IsFacelift)))
             .ForCtorParam(nameof(UpdateCarCommand.CarTechInfo), opt => opt.MapFrom(src =>
                 new CarTechInfo(
+                    src.Dto.FuelCurrentLiters.HasValue &&
+                    src.Dto.FuelCapacityLiters.HasValue
+                        ? new FuelTank(
+                            src.Dto.FuelCurrentLiters.Value,
+                            src.Dto.FuelCapacityLiters.Value)
+                        : null,
+                    src.Dto.BatteryCurrentKWh.HasValue &&
+                    src.Dto.BatteryCapacityKWh.HasValue
+                        ? new BatteryLevel(
+                            src.Dto.BatteryCurrentKWh.Value,
+                            src.Dto.BatteryCapacityKWh.Value)
+                        : null,
                     src.Dto.Mileage,
-                    new EngineDetails(src.Dto.HorsePower, src.Dto.EngineVolume, src.Dto.PowerReverse,
-                        EngineType.FromName<EngineType>(src.Dto.EngineType)), 
+                    new EngineDetails(
+                        src.Dto.HorsePower,
+                        src.Dto.EngineVolume,
+                        src.Dto.PowerReverse,
+                        EngineType.FromName<EngineType>(src.Dto.EngineType)),
                     BodyStyle.FromName<BodyStyle>(src.Dto.BodyStyle),
                     TransmissionType.FromName<TransmissionType>(src.Dto.TransmissionType),
                     DriveType.FromName<DriveType>(src.Dto.DriveType)

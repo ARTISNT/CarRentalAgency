@@ -18,6 +18,11 @@ public sealed record CreateCarRequest
     public string? Variant { get; init; }
 
     // Technical info
+    public double? FuelCurrentLiters { get; init; }
+    public double? FuelCapacityLiters { get; init; }
+
+    public double? BatteryCurrentKWh { get; init; }
+    public double? BatteryCapacityKWh { get; init; } 
     public double Mileage { get; init; }
 
     public string BodyStyle { get; init; } = default!;
@@ -34,7 +39,7 @@ public sealed record CreateCarRequest
     public int HorsePower { get; init; }
     public double? PowerReverse { get; init; }
 
-// Pricing
+    // Pricing
     public double PricePerHour { get; init; }
 
     // Class
