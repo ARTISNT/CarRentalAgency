@@ -20,6 +20,11 @@ public class ContractAuthorizationPolicy(IClientContext clientContext) : IContra
         return HasPermission(Permissions.ViewAllContracts);
     }
 
+    public bool CanChangeContractStatus()
+    {
+        return HasPermission(Permissions.ChangeContractStatus);
+    }
+
     private bool HasPermission(string permission)
     {
         return clientContext.Permissions.Contains(permission);

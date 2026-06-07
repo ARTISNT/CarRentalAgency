@@ -4,5 +4,5 @@ public interface IContractAuthorizationPolicy
 {
     public bool CanCreateContract(Guid targetClientId);
     public bool CanViewClientContracts();
-    
+    public bool CanChangeContractStatus();
 }

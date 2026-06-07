@@ -20,7 +20,12 @@ public class SignContractCommandHandler(
         var contract = await contractRepository.GetContractAsync(request.Id, cancellationToken)
             ?? throw new ContractNotFoundException("Contract not found");
 
-        documentService.SignContract(clientContext.ClientId, contract);
+        var base64Data = request.SignatureBase64;
+        if (base64Data.Contains(","))
+            base64Data = base64Data.Split(',')[1];
+        var signatureImage = Convert.FromBase64String(base64Data);
+
+        documentService.SignContract(clientContext.ClientId, contract, signatureImage);
         contract.Sign();
         
         await contractRepository.UpdateContractAsync(contract, cancellationToken);
@@ -28,6 +33,7 @@ public class SignContractCommandHandler(
         var integrationEvent = new ContractSignedIntegrationEvent(
             contract.Id,
             contract.ClientId,
+            contract.RentalId,
             DateTime.UtcNow);
         await publishEndpoint.Publish(integrationEvent, cancellationToken);
     }

@@ -1,6 +1,8 @@
 using ContractService.Application.Features.Contracts.CancelContract;
+using ContractService.Application.Features.Contracts.ChangeContractStatus;
 using ContractService.Application.Features.Contracts.CreateContract;
 using ContractService.Application.Features.Contracts.GetContract;
+using ContractService.Application.Features.Contracts.GetContractPdf;
 using ContractService.Application.Features.Contracts.GetContracts;
 using ContractService.Application.Features.Contracts.SignContract;
 using ContractService.Domain.Contracts;
@@ -60,5 +62,35 @@ public class ContractController(ISender sender) : ControllerBase
         await sender.Send(request, cancellationToken);
         
         return Ok();
+    }
+
+    [HttpPut]
+    [Route("change-status")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = "ChangeContractStatus")]
+    public async Task<IActionResult> ChangeContractStatus(
+        [FromBody] ChangeContractStatusCommand request, CancellationToken cancellationToken)
+    {
+        await sender.Send(request, cancellationToken);
+        return Ok();
+    }
+
+    [HttpGet]
+    [Route("get-contract-{id}/pdf")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = "ViewAllContracts")]
+    public async Task<IActionResult> GetContractPdf(
+        [FromRoute] Guid id,
+        [FromQuery] bool signed = false,
+        [FromQuery] bool download = false,
+        CancellationToken cancellationToken = default)
+    {
+        var pdf = await sender.Send(new GetContractPdfQuery(id, signed), cancellationToken);
+
+        if (!pdf.Exists)
+            return NotFound("PDF file not found");
+
+        var disposition = download ? "attachment" : "inline";
+        Response.Headers.Append("Content-Disposition", $"{disposition}; filename=\"{pdf.FileName}\"");
+
+        return PhysicalFile(pdf.FilePath, pdf.ContentType);
     }
 }

@@ -23,7 +23,14 @@ public class ContractDocumentService(
         await pdfGenerator.Generate(additionContent, path);
     }
 
-    public void SignContract(Guid clientId, Contract contract)
+    public async Task GenerateReturnAct(Guid clientId, string returnActContent, Contract contract)
+    {
+        storage.EnsureDirectoriesExist(clientId, contract);
+        string path = storage.GetReturnActPath(clientId, contract);
+        await pdfGenerator.Generate(returnActContent, path);
+    }
+
+    public void SignContract(Guid clientId, Contract contract, byte[] signatureImage)
     {
         var contractPath = storage.GetContractPath(clientId, contract);
         
@@ -36,6 +43,37 @@ public class ContractDocumentService(
         
         signer.SignPdf(contractPath,
             signedContractPath,
+            contractCertificateProvider.PfxPath,
+            contractCertificateProvider.CertificatePassword,
+            signatureImage);
+    }
+
+    public void SignAddition(Guid clientId, Contract contract)
+    {
+        var path = storage.GetAdditionPath(clientId, contract);
+
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException(
+                $"Addition not found: {path}");
+        }
+
+        signer.SignPdf(path, path,
+            contractCertificateProvider.PfxPath,
+            contractCertificateProvider.CertificatePassword);
+    }
+
+    public void SignReturnAct(Guid clientId, Contract contract)
+    {
+        var path = storage.GetReturnActPath(clientId, contract);
+
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException(
+                $"Return act not found: {path}");
+        }
+
+        signer.SignPdf(path, path,
             contractCertificateProvider.PfxPath,
             contractCertificateProvider.CertificatePassword);
     }

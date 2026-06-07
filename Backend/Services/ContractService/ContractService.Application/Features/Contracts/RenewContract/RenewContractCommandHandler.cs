@@ -32,5 +32,6 @@ public class RenewContractCommandHandler(
         
         await contractRepository.UpdateContractAsync(contract, cancellationToken);
         await documentService.GenerateAddition(contract.ClientId, contractTemplateSnapshot.Content, contract);
+        documentService.SignAddition(contract.ClientId, contract);
     }
 }

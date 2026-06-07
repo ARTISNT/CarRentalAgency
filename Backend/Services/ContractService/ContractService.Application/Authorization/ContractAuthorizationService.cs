@@ -15,4 +15,10 @@ public class ContractAuthorizationService(IContractAuthorizationPolicy contractA
         if(!contractAuthorizationPolicy.CanCreateContract(targetClientId))
             throw new ForbiddenException("No permission");
     }
+
+    public void EnsureCanChangeContractStatus()
+    {
+        if(!contractAuthorizationPolicy.CanChangeContractStatus())
+            throw new ForbiddenException("No permission");
+    }
 }
