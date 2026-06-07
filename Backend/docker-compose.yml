@@ -62,7 +62,8 @@ services:
 
   car-service:
     build:
-      context: ./Services/CarService
+      context: .
+      dockerfile: Services/CarService/Dockerfile
     ports:
       - "5001:8080"
     environment:
@@ -75,6 +76,9 @@ services:
         User Id=sa;
         Password=${MSSQL_PASSWORD};
         TrustServerCertificate=True;
+
+      MessageBroker__User: ${RABBITMQ_DEFAULT_USER}
+      MessageBroker__Password: ${RABBITMQ_DEFAULT_PASS}
 
       InternalJwt__SecretKey: ${InternalJWT_KEY}
       InternalJwt__Issuer: ${InternalJWT_ISSUER}
@@ -171,7 +175,8 @@ services:
 
   notification-service:
     build:
-      context: ./Services/NotificationService
+      context: .
+      dockerfile: ./Services/NotificationService/Dockerfile
     ports:
       - "5005:8080"
     environment:
@@ -190,9 +195,68 @@ services:
       Smtp__FromName: ${SMTP_FROM_NAME}
       Smtp__ToAddress: ${SMTP_TO_ADDRESS}
 
+  mssql-payments:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: PaymentDb
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_PASSWORD}
+    ports:
+      - "1437:1433"
+    volumes:
+      - mssql-payments-data:/var/opt/mssql
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: Services/PaymentService/Dockerfile
+    ports:
+      - "5006:8080"
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Development
+
+      ConnectionStrings__DefaultConnection: >
+        Server=mssql-payments,1433;
+        Database=PaymentDb;
+        User Id=sa;
+        Password=${MSSQL_PASSWORD};
+        TrustServerCertificate=True;
+
+      MessageBroker__User: ${RABBITMQ_DEFAULT_USER}
+      MessageBroker__Password: ${RABBITMQ_DEFAULT_PASS}
+
+      InternalJwt__SecretKey: ${InternalJWT_KEY}
+      InternalJwt__Issuer: ${InternalJWT_ISSUER}
+      InternalJwt__Audience: ${InternalJWT_AUDIENCE}
+
+      UserJwt__SecretKey: ${UserJWT_KEY}
+      UserJwt__Issuer: ${UserJWT_ISSUER}
+      UserJwt__Audience: ${UserJWT_AUDIENCE}
+
+      BePaid__ShopId: ${BEPAID_SHOP_ID:-4225}
+      BePaid__SecretKey: ${BEPAID_SECRET_KEY:-3834fbef1fe6ea024ef77f5c79ec7ff1ba710ea6241c08c2f341afda8af4c1c4}
+      BePaid__NotificationUrl: ${BEPAID_NOTIFICATION_URL:-https://your-ngrok-url.ngrok-free.dev/api/payments/webhook}
+
+  gateway:
+    build:
+      context: ./Gateway/CarRentalAgency.GateWay/CarRentalAgency.GateWay
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Development 
+    depends_on:
+      - car-service
+      - user-service
+      - rental-service
+      - contract-service
+      - payment-service
+
 volumes:
   mssql-users-data:
   mssql-rentals-data:
   mssql-cars-data:
   mssql-contracts-data:
+  mssql-payments-data:
   rabbitmq_data:

@@ -1,21 +1,18 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/playwright/dotnet:v1.60.0-noble AS build
 
 WORKDIR /src
 
-COPY NotificationService.Api/*.csproj NotificationService.Api/
-COPY NotificationService.Application/*.csproj NotificationService.Application/
-COPY NotificationService.Domain/*.csproj NotificationService.Domain/
-COPY NotificationService.Infrastructure/*.csproj NotificationService.Infrastructure/
-
-RUN dotnet restore NotificationService.Api/NotificationService.Api.csproj
-
 COPY . .
 
-RUN dotnet publish NotificationService.Api/NotificationService.Api.csproj \
+RUN dotnet restore \
+    Services/NotificationService/NotificationService.Api/NotificationService.Api.csproj
+
+RUN dotnet publish \
+    Services/NotificationService/NotificationService.Api/NotificationService.Api.csproj \
     -c Release \
     -o /app/publish
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0
+FROM mcr.microsoft.com/playwright/dotnet:v1.60.0-noble
 
 WORKDIR /app
 
