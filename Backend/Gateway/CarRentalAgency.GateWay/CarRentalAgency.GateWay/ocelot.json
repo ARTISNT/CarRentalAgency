@@ -1,0 +1,106 @@
+{
+  "Routes": [
+    {
+      "DownstreamPathTemplate": "/api/User/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "user-service", "Port": 8080 }
+      ],
+      "UpstreamPathTemplate": "/api/User/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "SwaggerKey": "UserService"
+    },
+    {
+      "UpstreamPathTemplate": "/scalar",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/scalar",
+      "DownstreamHostAndPorts": [
+        { "Host": "gateway", "Port": 8080 }
+      ]
+    }, 
+    {
+      "DownstreamPathTemplate": "/api/Car/available",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "car-service", "Port": 8080 }
+      ],
+      "UpstreamPathTemplate": "/api/Car/available",
+      "UpstreamHttpMethod": [ "GET" ],
+      "SwaggerKey": "CarService"
+    },
+    {
+      "DownstreamPathTemplate": "/api/Car/public-car/{carId}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "car-service", "Port": 8080 }
+      ],
+      "UpstreamPathTemplate": "/api/Car/public-car/{carId}",
+      "UpstreamHttpMethod": [ "GET" ],
+      "SwaggerKey": "CarService"
+    },
+    {
+      "DownstreamPathTemplate": "/api/Car/my-rented",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "car-service", "Port": 8080 }
+      ],
+      "UpstreamPathTemplate": "/api/Car/my-rented",
+      "UpstreamHttpMethod": [ "GET" ],
+      "SwaggerKey": "CarService"
+    },
+    {
+      "DownstreamPathTemplate": "/api/Car/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "car-service", "Port": 8080 }
+      ],
+      "UpstreamPathTemplate": "/api/Car/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+      "SwaggerKey": "CarService"
+    },
+    {
+      "DownstreamPathTemplate": "/api/Rental/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "rental-service", "Port": 8080 }
+      ],
+      "UpstreamPathTemplate": "/api/Rental/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT" ],
+      "SwaggerKey": "RentalService"
+    },
+    {
+      "DownstreamPathTemplate": "/api/Contract/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "contract-service", "Port": 8080 }
+      ],
+      "UpstreamPathTemplate": "/api/Contract/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT" ],
+      "SwaggerKey": "ContractService"
+    },
+    {
+      "DownstreamPathTemplate": "/api/ContractTemplate/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "contract-service", "Port": 8080 }
+      ],
+      "UpstreamPathTemplate": "/api/ContractTemplate/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT" ],
+      "SwaggerKey": "ContractService" 
+    },
+    {
+      "DownstreamPathTemplate": "/api/Payments/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "payment-service", "Port": 8080 }
+      ],
+      "UpstreamPathTemplate": "/api/Payments/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST" ],
+      "SwaggerKey": "PaymentService"
+    }
+  ],
+  
+  "GlobalConfiguration": {
+    "BaseUrl": "http://gateway:8080"
+  }
+}
