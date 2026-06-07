@@ -8,6 +8,7 @@ public sealed class Car : Entity, IAggregateRoot
 {
     public DateTime ReleaseDate { get; private set; }
     public AvailabilityStatus Status { get; private set; }
+    public Guid? CurrentRenterId { get; private set; }
     public LicensePlate LicensePlate { get; private set; }
     public VinCode VinCode { get; private set; }
     public Color Color { get; private set; }
@@ -77,11 +78,12 @@ public sealed class Car : Entity, IAggregateRoot
     // STATUS TRANSITIONS
     // ========================
 
-    public void Rent()
+    public void Rent(Guid renterId)
     {
         EnsureStatusIs(AvailabilityStatus.Available);
 
         ChangeStatus(AvailabilityStatus.Rented);
+        CurrentRenterId = renterId;
 
         AddDomainEvent(new CarRentedDomainEvent(Id, DateTime.UtcNow));
     }
@@ -91,8 +93,33 @@ public sealed class Car : Entity, IAggregateRoot
         EnsureStatusIs(AvailabilityStatus.Rented);
 
         ChangeStatus(AvailabilityStatus.Available);
+        CurrentRenterId = null;
 
         AddDomainEvent(new CarBecameAvailableDomainEvent(Id, DateTime.UtcNow));
+    }
+
+    public void MarkAsReturned()
+    {
+        EnsureStatusIs(AvailabilityStatus.Rented);
+
+        ChangeStatus(AvailabilityStatus.Returned);
+        CurrentRenterId = null;
+
+        AddDomainEvent(new CarReturnedDomainEvent(Id, DateTime.UtcNow));
+    }
+
+    public void ProcessReturn(AvailabilityStatus targetStatus)
+    {
+        EnsureStatusIs(AvailabilityStatus.Returned);
+
+        ChangeStatus(targetStatus);
+
+        if (targetStatus == AvailabilityStatus.Available)
+            AddDomainEvent(new CarBecameAvailableDomainEvent(Id, DateTime.UtcNow));
+        else if (targetStatus == AvailabilityStatus.Maintenance)
+            AddDomainEvent(new CarWasSentToMaintenanceDomainEvent(Id, DateTime.UtcNow));
+        else if (targetStatus == AvailabilityStatus.Broken)
+            AddDomainEvent(new CarWasBrokenDomainEvent(Id, DateTime.UtcNow));
     }
 
     public void Break()
@@ -111,6 +138,24 @@ public sealed class Car : Entity, IAggregateRoot
         ChangeStatus(AvailabilityStatus.Maintenance);
 
         AddDomainEvent(new CarWasSentToMaintenanceDomainEvent(Id, DateTime.UtcNow));
+    }
+
+    public void SendToRepair()
+    {
+        EnsureStatusIs(AvailabilityStatus.Broken);
+
+        ChangeStatus(AvailabilityStatus.Maintenance);
+
+        AddDomainEvent(new CarWasSentToMaintenanceDomainEvent(Id, DateTime.UtcNow));
+    }
+
+    public void CompleteMaintenance()
+    {
+        EnsureStatusIs(AvailabilityStatus.Maintenance);
+
+        ChangeStatus(AvailabilityStatus.Available);
+
+        AddDomainEvent(new CarBecameAvailableDomainEvent(Id, DateTime.UtcNow));
     }
 
     // ========================

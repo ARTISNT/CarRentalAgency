@@ -44,6 +44,15 @@ public class CarResponseMappingProfile : Profile
             .ForMember(dest => dest.LicensePlate,
                 opt => opt.MapFrom(src => src.LicensePlate.Value));
         
+        CreateMap<Car, PublicCarDetailsResponse>()
+            .IncludeBase<Car, CarListResponse>()
+            .ForMember(dest => dest.DriveType,
+                opt => opt.MapFrom(src => src.TechInfo.DriveType.Name))
+            .ForMember(dest => dest.Transmission,
+                opt => opt.MapFrom(src => src.TechInfo.TransmissionType.Name))
+            .ForMember(dest => dest.Mileage,
+                opt => opt.MapFrom(src => src.TechInfo.Mileage));
+
         CreateMap<Car, CarForRentResponse>()
             .ForMember(dest => dest.Model, 
                 opt => opt.MapFrom(src => src.ModelInfo.Model))

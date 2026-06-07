@@ -20,6 +20,9 @@ public class CarConfiguration : IEntityTypeConfiguration<Car>
         builder.Property(x => x.PhotoUrl)
             .IsRequired();
 
+        builder.Property(x => x.CurrentRenterId)
+            .HasColumnName("current_renter_id");
+
         builder.Property(x => x.Status)
             .HasConversion(
                 v => v.Name,
@@ -84,6 +87,24 @@ public class CarConfiguration : IEntityTypeConfiguration<Car>
             {
                 ti.Property(x => x.Mileage)
                     .HasColumnName("mileage");
+                
+                ti.OwnsOne(x => x.FuelTank, ft =>
+                {
+                    ft.Property(x => x.CurrentLiters)
+                        .HasColumnName("fuel_current_liters");
+
+                    ft.Property(x => x.CapacityLiters)
+                        .HasColumnName("fuel_capacity_liters");
+                });
+
+                ti.OwnsOne(x => x.BatteryLevel, bl =>
+                {
+                    bl.Property(x => x.CurrentKWh)
+                        .HasColumnName("battery_current_kwh");
+
+                    bl.Property(x => x.CapacityKWh)
+                        .HasColumnName("battery_capacity_kwh");
+                });
 
                 ti.Property(x => x.BodyStyle)
                     .HasConversion(
