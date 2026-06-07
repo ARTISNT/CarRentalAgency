@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using UserService.Domain.Users;
+using UserService.Infrastructure.Extensions;
 
 namespace UserService.Infrastructure.Repositories;
 
@@ -17,9 +18,9 @@ public class UserRepository(UserServiceContext context) : IUserRepository
         return user;
     }
 
-    public async Task<IReadOnlyCollection<User>?> GetAllUsersAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyCollection<User>?> GetAllUsersAsync(UserSpecification userSpecification, CancellationToken cancellationToken = default)
     {
-        var users = await context.Users.ToListAsync(cancellationToken);
+        var users = await context.Users.ApplyFiltering(userSpecification).ToListAsync(cancellationToken);
         return users;
     }
 

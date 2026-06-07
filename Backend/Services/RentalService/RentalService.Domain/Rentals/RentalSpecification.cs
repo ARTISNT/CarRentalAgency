@@ -1,8 +1,8 @@
-namespace ContractService.Domain.Contracts;
+namespace RentalService.Domain.Rentals;
 
-public class ContractSpecification
+public class RentalSpecification
 {
-    public Guid? ClientId { get; set; }
+    public Guid? CarRenterId { get; set; }
     public string? Status { get; set; }
     public DateTime? DateFrom { get; set; }
     public DateTime? DateTo { get; set; }

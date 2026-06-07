@@ -1,13 +1,14 @@
 using CarService.Domain.Cars;
+using CarService.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace CarService.Infrastructure.Persistence.Repositories;
 
 public class CarRepository(CarServiceDbContext dbContext) : ICarRepository
 {
-    public async Task<IReadOnlyCollection<Car>> GetCarsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyCollection<Car>> GetCarsAsync(CarSpecification carSpecification, CancellationToken cancellationToken = default)
     {
-        var cars = await dbContext.Cars.ToListAsync(cancellationToken);
+        var cars = await dbContext.Cars.ApplyFiltering(carSpecification).ToListAsync(cancellationToken);
         return cars;
     }
 
