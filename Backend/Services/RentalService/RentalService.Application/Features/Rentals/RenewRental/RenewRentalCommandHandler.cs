@@ -1,5 +1,6 @@
 using Contracts.RentalEvents;
 using MediatR;
+using RentalService.Application.Authorization;
 using RentalService.Application.Common;
 using RentalService.Domain.Payments;
 using RentalService.Domain.Rentals;
@@ -12,11 +13,14 @@ public class RenewRentalCommandHandler(
     IPaymentRepository paymentRepository,
     RentalPricingDomainService pricingDomainService, 
     IPricingPoliciesFactory policiesFactory,
-    IIntegrationEventPublisher publisher) 
+    IIntegrationEventPublisher publisher,
+    IRentalAuthorizationService authorizationService) 
     : IRequestHandler<RenewRentalCommand>
 {
     public async Task Handle(RenewRentalCommand request, CancellationToken cancellationToken)
     {
+        authorizationService.EnsureCanEditRental();
+
         var rental = await rentalRepository.GetRentalAsync(request.Id, cancellationToken) ?? 
                      throw new KeyNotFoundException("Rental not found");
         

@@ -16,7 +16,7 @@ public class UserExternalService(IHttpClientFactory httpClientFactory, IJwtProvi
         client.DefaultRequestHeaders.Authorization = 
             new AuthenticationHeaderValue("Bearer", token);
         
-        var user = await client.GetFromJsonAsync<UserRentInfoResponse>($"/api/InternalUser/get-user-for-rent/{userId}");
+        var user = await client.GetFromJsonAsync<UserRentInfoResponse>($"/api/Internal/get-user-for-rent/{userId}");
 
         if(user is  null)
             throw new ArgumentNullException(nameof(user));

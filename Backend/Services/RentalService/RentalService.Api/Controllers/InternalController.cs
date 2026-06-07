@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RentalService.Application.Features.Rentals.GetRentalForContract;
+using RentalService.Application.Features.Rentals.GetRentalForPayment;
 
 namespace RentalService.Api.Controllers;
 
@@ -14,6 +15,14 @@ public class InternalController(ISender sender) : ControllerBase
     public async Task<IActionResult> GetRentalForContract(Guid id)
     {
         var rental = await sender.Send(new GetRentalForContractQuery(id));
+        return Ok(rental);
+    }
+
+    [HttpGet("get-rental-for-payment/{id}")]
+    [Authorize(AuthenticationSchemes = "InternalAuth", Policy = "PaymentServiceOnly")]
+    public async Task<IActionResult> GetRentalForPayment(Guid id)
+    {
+        var rental = await sender.Send(new GetRentalForPaymentQuery(id));
         return Ok(rental);
     }
 }

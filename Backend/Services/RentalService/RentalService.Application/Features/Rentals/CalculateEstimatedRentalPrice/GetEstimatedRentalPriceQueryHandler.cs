@@ -1,4 +1,5 @@
 using MediatR;
+using RentalService.Application.Authorization;
 using RentalService.Application.Common;
 using RentalService.Domain.Rentals;
 using RentalService.Domain.Services;
@@ -8,12 +9,15 @@ namespace RentalService.Application.Features.Rentals.CalculateEstimatedRentalPri
 public class GetEstimatedRentalPriceQueryHandler(
     IRentalRepository rentalRepository,
     IPricingPoliciesFactory pricingPoliciesFactory,
-    RentalPricingDomainService  rentalPricingDomainService) : IRequestHandler<GetEstimatedRentalPriceQuery, decimal>
+    RentalPricingDomainService  rentalPricingDomainService,
+    IRentalAuthorizationService authorizationService) : IRequestHandler<GetEstimatedRentalPriceQuery, decimal>
 {
     public async Task<decimal> Handle(GetEstimatedRentalPriceQuery request, CancellationToken cancellationToken)
     {
         var rental = await rentalRepository.GetRentalAsync(request.RentalId, cancellationToken) ??
                      throw new KeyNotFoundException("Rental not found");
+
+        authorizationService.EnsureCanViewRentals(rental.CarRenterId);
         
         var pricingPolicies = pricingPoliciesFactory.Create();
 

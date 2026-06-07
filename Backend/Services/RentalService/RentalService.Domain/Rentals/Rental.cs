@@ -13,6 +13,8 @@ public class Rental : Entity, IAggregateRoot
     public DateTime StartDate { get; private set; }
     public DateTime EndDate { get; private set; }
     public DateTime? ReturnDate { get; private set; }
+    public DateTime? ContractSignedAt { get; private set; }
+    public DateTime? DepositPaidAt { get; private set; }
     public string? PromoCode { get; private set; }
     public RentCarSnapshot RentCarSnapshot { get; }
     public CarRenterSnapshot CarRenterSnapshot { get; }
@@ -54,6 +56,22 @@ public class Rental : Entity, IAggregateRoot
         AddDomainEvent(new RentCreatedDomainEvent(Id, DateTime.UtcNow));
     }
 
+    public void MarkContractSigned(DateTime signedAt)
+    {
+        if (ActivityStatus != RentActivityStatus.AwaitingConfirmation)
+            throw new InvalidOperationException("Cannot mark contract as signed");
+
+        ContractSignedAt = signedAt;
+    }
+
+    public void MarkDepositPaid(DateTime paidAt)
+    {
+        if (ActivityStatus != RentActivityStatus.AwaitingConfirmation)
+            throw new InvalidOperationException("Cannot mark deposit as paid");
+
+        DepositPaidAt = paidAt;
+    }
+
     public void StartRental()
     {
         if (ActivityStatus != RentActivityStatus.AwaitingConfirmation)
@@ -61,6 +79,12 @@ public class Rental : Entity, IAggregateRoot
         
         if(!PaymentId.HasValue)
             throw new InvalidOperationException("Payment didn't attached");
+
+        if(!ContractSignedAt.HasValue)
+            throw new InvalidOperationException("Contract is not signed");
+
+        if(!DepositPaidAt.HasValue)
+            throw new InvalidOperationException("Deposit is not paid");
 
         ActivityStatus = RentActivityStatus.Active;
         AddDomainEvent(new RentStartedDomainEvent(Id, DateTime.UtcNow));

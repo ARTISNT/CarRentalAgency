@@ -1,8 +1,10 @@
 using Contracts.RentalEvents;
 using MediatR;
+using RentalService.Application.Authorization;
 using RentalService.Application.Common;
 using RentalService.Domain.Payments;
 using RentalService.Domain.Rentals;
+using RentalService.Domain.Rentals.PricingPolicies;
 using RentalService.Domain.Services;
 
 namespace RentalService.Application.Features.Rentals.CreateRental;
@@ -14,14 +16,19 @@ public class CreateRentalCommandHandler(
     ICarExternalService carExternalService, 
     IPricingPoliciesFactory pricingPoliciesFactory,
     RentalPricingDomainService rentalPricingDomainService,
-    IIntegrationEventPublisher publisher) 
+    IIntegrationEventPublisher publisher,
+    IRentalAuthorizationService authorizationService) 
     : IRequestHandler<CreateRentalCommand, Guid>
 {
     public async Task<Guid> Handle(CreateRentalCommand request, CancellationToken cancellationToken)
     {
+        authorizationService.EnsureCanCreateRental(request.UserId);
+        
         var userTask = userExternalService.GetUserForRentAsync(request.UserId);
         var carTask = carExternalService.GetCarForRentAsync(request.CarId);
+        
         await Task.WhenAll(userTask, carTask);
+        
         var user = await userTask;
         var car = await carTask;
 
@@ -32,14 +39,15 @@ public class CreateRentalCommandHandler(
             user.Patronymic, user.PhoneNumber, user.Email);
         var pricingPolicies = pricingPoliciesFactory.Create();
         
-        var rental = new Rental(request.CarId,
-            request.UserId,
+        var rental = new Rental(request.UserId,
+            request.CarId,
             request.StartDate,
             request.EndDate,
             rentCarSnapshot,
             carRenterSnapshot);
-        
-        rental.ApplyPromoCode(request.PromoCode);
+       
+        if(request.PromoCode != null)
+            rental.ApplyPromoCode(request.PromoCode);
 
         var baseCostWithDiscount = rentalPricingDomainService.CalculateEstimatedCost(
             pricingPolicies, rental, "BYN");

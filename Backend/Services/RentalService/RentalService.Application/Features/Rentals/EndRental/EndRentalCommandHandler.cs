@@ -1,5 +1,6 @@
 using Contracts.RentalEvents;
 using MediatR;
+using RentalService.Application.Authorization;
 using RentalService.Application.Common;
 using RentalService.Domain.Payments;
 using RentalService.Domain.Rentals;
@@ -12,11 +13,14 @@ public class EndRentalCommandHandler(
     IPricingPoliciesFactory pricingPoliciesFactory,
     IPaymentRepository paymentRepository,
     RentalPricingDomainService  rentalPricingDomainService,
-    IIntegrationEventPublisher publisher) 
+    IIntegrationEventPublisher publisher,
+    IRentalAuthorizationService authorizationService) 
     : IRequestHandler<EndRentalCommand>
 {
     public async Task Handle(EndRentalCommand request, CancellationToken cancellationToken)
     {
+        authorizationService.EnsureCanEditRental();
+
         var rental = await rentalRepository.GetRentalAsync(request.Id, cancellationToken) ??
                      throw new KeyNotFoundException("Rental not found");
         var pricingPolicies = pricingPoliciesFactory.Create();
@@ -38,11 +42,6 @@ public class EndRentalCommandHandler(
                 "Early return");
         }
 
-        if (payment.Underpayment.Amount > 0)
-        {
-            
-        }
-        
         await rentalRepository.UpdateRentalAsync(rental, cancellationToken);
         await paymentRepository.UpdatePaymentAsync(payment, cancellationToken);
 
@@ -50,7 +49,11 @@ public class EndRentalCommandHandler(
             rental.Id,
             rental.RentCarId,
             request.ReturnDate,
-            payment.RequiredAmount.Amount);
+            payment.RequiredAmount.Amount,
+            request.Mileage,
+            request.FuelLevel,
+            request.PenaltyAmount,
+            request.DamageDescription);
         await publisher.Publish(integrationEvent, cancellationToken);
     }
 }
