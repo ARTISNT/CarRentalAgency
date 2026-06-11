@@ -5,6 +5,7 @@ namespace PaymentService.Application.Abstractions.PaymentGateway
     public interface IPaymentGateway
     {
         Task<PaymentData> CreateSessionsAsync(decimal amount, string trackingId);
+        Task<PaymentData> CreateSessionsAsync(decimal amount, string trackingId, string description);
         Task<string> RefundAsync(string token, decimal amount);
         string BuildUrl(string token);
     }

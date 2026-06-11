@@ -24,6 +24,10 @@ namespace PaymentService.Infrastructure.Persistence.Configurations
             builder.Property(t => t.PaymentDate);
             builder.Property(t => t.CreatedAt)
                 .IsRequired();
+            builder.Property(t => t.Description)
+                .HasMaxLength(500);
+            builder.Property(t => t.ExternalReceiptUrl)
+                .HasMaxLength(500);
             builder.HasOne(t => t.PaymentMethod)
                 .WithMany()
                 .HasForeignKey(t => t.PaymentId)

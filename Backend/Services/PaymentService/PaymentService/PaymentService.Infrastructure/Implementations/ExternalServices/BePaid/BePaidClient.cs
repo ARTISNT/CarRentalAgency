@@ -26,6 +26,11 @@ namespace PaymentService.Infrastructure.Implementations.ExternalServices.BePaid
 
         public async Task<PaymentData> CreateSessionsAsync(decimal amount, string trackingId)
         {
+            return await CreateSessionsAsync(amount, trackingId, "Оплата аренды авто");
+        }
+
+        public async Task<PaymentData> CreateSessionsAsync(decimal amount, string trackingId, string description)
+        {
             var shopId = _configuration["BePaid:ShopId"];
             var secretKey = _configuration["BePaid:SecretKey"];
             var basicAuth = Encoding.UTF8.GetBytes($"{shopId}:{secretKey}");
@@ -47,17 +52,17 @@ namespace PaymentService.Infrastructure.Implementations.ExternalServices.BePaid
                     {
                         currency = "BYN",
                         amount = (int)(amount * 100),
-                        description = "Оплата аренды авто",
+                        description = description,
                         tracking_id = trackingId,
                         additional_data = new
                         {
-                            receipt_text = new[] { $"Оплата аренды #{trackingId}" }
+                            receipt_text = new[] { $"{description} #{trackingId}" }
                         }
                     },
                     settings = new
                     {
-                        return_url = "http://localhost:3000/",
-                        success_url = "http://localhost:3000/",
+                        return_url = _configuration["BePaid:CallbackUrl"] ?? "http://localhost:5173/payment/callback",
+                        success_url = _configuration["BePaid:CallbackUrl"] ?? "http://localhost:5173/payment/callback",
                         decline_url = "https://bepaid.by",
                         fail_url = "https://bepaid.by",
                         cancel_url = "https://bepaid.by",

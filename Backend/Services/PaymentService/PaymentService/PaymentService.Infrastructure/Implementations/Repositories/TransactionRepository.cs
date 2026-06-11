@@ -29,7 +29,7 @@ namespace PaymentService.Infrastructure.Implementations.Repositories
         public async Task<Transaction?> GetByRentalIdAsync(Guid rentalId)
         {
             var transaction = await _paymentContext.Transactions
-                .Where(t => t.RentalId == rentalId && t.Status == Status.Pending)
+                .Where(t => t.RentalId == rentalId)
                 .OrderByDescending(t => t.CreatedAt)
                 .FirstOrDefaultAsync();
             return transaction;
@@ -43,6 +43,26 @@ namespace PaymentService.Infrastructure.Implementations.Repositories
                 .OrderByDescending(t => t.CreatedAt)
                 .FirstOrDefaultAsync();
             return transaction;
+        }
+        public async Task<IReadOnlyList<Transaction>> GetAllByRentalIdAsync(Guid rentalId, CancellationToken cancellationToken = default)
+        {
+            return await _paymentContext.Transactions
+                .Where(t => t.RentalId == rentalId)
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync(cancellationToken);
+        }
+        public async Task<IReadOnlyList<Transaction>> GetPendingByRentalIdAndTypesAsync(Guid rentalId, IEnumerable<PaymentType> paymentTypes, CancellationToken cancellationToken = default)
+        {
+            return await _paymentContext.Transactions
+                .Where(t => t.RentalId == rentalId
+                         && paymentTypes.Contains(t.PaymentType)
+                         && t.Status == Status.Pending)
+                .ToListAsync(cancellationToken);
+        }
+        public async Task<Transaction?> GetByExternalTokenAsync(string token)
+        {
+            return await _paymentContext.Transactions
+                .FirstOrDefaultAsync(t => t.ExternalToken == token);
         }
         public async Task DeleteAsync(Transaction transaction)
         {

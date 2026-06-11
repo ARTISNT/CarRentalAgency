@@ -8,6 +8,26 @@ namespace PaymentService.Application.DTOs.Rentals
         DateTime StartDate,
         DateTime EndDate,
         decimal TotalPrice,
-        decimal DepositAmount
+        decimal DepositAmount,
+        decimal PaidAmount,
+        decimal RequiredAmount,
+        decimal RemainingAmount,
+        decimal FineOutstanding,
+        decimal AdditionalOutstanding,
+        string PaymentStatus,
+        List<PaymentTransactionDto> Transactions
+    );
+
+    public record PaymentTransactionDto(
+        Guid Id,
+        decimal Amount,
+        string Type,
+        string Method,
+        string Status,
+        string ExternalTransactionId,
+        string? Description,
+        DateTime CreatedAt,
+        DateTime? CompletedAt,
+        bool IsRefunded
     );
 }

@@ -13,12 +13,14 @@ namespace PaymentService.Domain.Entities
         public Guid PaymentId { get; private set; }
         public PaymentMethod? PaymentMethod { get; private set; }
         public bool IsRefunded { get; private set; }
+        public string? Description { get; private set; }
+        public string? ExternalReceiptUrl { get; private set; }
         public DateTime CreatedAt { get; private set; }
         public DateTime PaymentDate { get; private set; }
 
         private Transaction() { }
 
-        public Transaction(decimal amount, string externalToken, Guid paymentId, Guid rentalId, PaymentType paymentType)
+        public Transaction(decimal amount, string externalToken, Guid paymentId, Guid rentalId, PaymentType paymentType, string? description = null)
         {
             Status = Status.Pending;
             PaymentType = paymentType;
@@ -27,10 +29,11 @@ namespace PaymentService.Domain.Entities
             RentalId = rentalId;
             PaymentId = paymentId;
             IsRefunded = false;
+            Description = description;
             CreatedAt = DateTime.UtcNow;
         }
 
-        public void ConfirmSuccess()
+        public void ConfirmSuccess(string? receiptUrl = null)
         {
             if (Status == Status.Success) return;
 
@@ -38,14 +41,24 @@ namespace PaymentService.Domain.Entities
                 throw new InvalidOperationException("Cannot change status if it Failed");
             Status = Status.Success;
             PaymentDate = DateTime.UtcNow;
+            ExternalReceiptUrl = receiptUrl;
         }
 
         public void MarkRefunded()
         {
-            if (PaymentType != PaymentType.Deposit)
-                throw new InvalidOperationException("Only deposit transactions can be refunded");
+            if (PaymentType != PaymentType.Deposit
+                && PaymentType != PaymentType.Fine
+                && PaymentType != PaymentType.Additional)
+            {
+                throw new InvalidOperationException("Only deposit, fine, or additional transactions can be refunded");
+            }
 
             IsRefunded = true;
+        }
+
+        public void AttachReceipt(string receiptUrl)
+        {
+            ExternalReceiptUrl = receiptUrl;
         }
     }
 }
