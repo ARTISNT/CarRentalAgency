@@ -26,6 +26,12 @@ services:
       - "1433:1433"
     volumes:
       - mssql-users-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
 
   mssql-rentals:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -37,6 +43,12 @@ services:
       - "1434:1433"
     volumes:
       - mssql-rentals-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
 
   mssql-cars:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -48,6 +60,12 @@ services:
       - "1435:1433"
     volumes:
       - mssql-cars-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
 
   mssql-contracts:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -59,6 +77,12 @@ services:
       - "1436:1433"
     volumes:
       - mssql-contracts-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
 
   car-service:
     build:
@@ -87,6 +111,11 @@ services:
       UserJwt__SecretKey: ${UserJWT_KEY}
       UserJwt__Issuer: ${UserJWT_ISSUER}
       UserJwt__Audience: ${UserJWT_AUDIENCE}
+    depends_on:
+      mssql-cars:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
 
   user-service:
     build:
@@ -111,6 +140,11 @@ services:
       UserJwt__SecretKey: ${UserJWT_KEY}
       UserJwt__Issuer: ${UserJWT_ISSUER}
       UserJwt__Audience: ${UserJWT_AUDIENCE}
+    depends_on:
+      mssql-users:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
 
   rental-service:
     build:
@@ -140,6 +174,11 @@ services:
       UserJwt__SecretKey: ${UserJWT_KEY}
       UserJwt__Issuer: ${UserJWT_ISSUER}
       UserJwt__Audience: ${UserJWT_AUDIENCE}
+    depends_on:
+      mssql-rentals:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
 
   contract-service:
     build:
@@ -172,6 +211,11 @@ services:
       UserJwt__Audience: ${UserJWT_AUDIENCE}
 
       ContractCertificate__Password: ${ContractCertificate_PASSWORD}
+    depends_on:
+      mssql-contracts:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
 
   notification-service:
     build:
@@ -194,6 +238,9 @@ services:
       Smtp__FromAddress: ${SMTP_FROM_ADDRESS}
       Smtp__FromName: ${SMTP_FROM_NAME}
       Smtp__ToAddress: ${SMTP_TO_ADDRESS}
+    depends_on:
+      rabbitmq:
+        condition: service_started
 
   mssql-payments:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -205,6 +252,12 @@ services:
       - "1437:1433"
     volumes:
       - mssql-payments-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
 
   payment-service:
     build:
@@ -238,6 +291,11 @@ services:
       BePaid__SecretKey: ${BEPAID_SECRET_KEY:-3834fbef1fe6ea024ef77f5c79ec7ff1ba710ea6241c08c2f341afda8af4c1c4}
       BePaid__CallbackUrl: ${BEPAID_CALLBACK_URL:-http://localhost:5173/payment/callback}
       BePaid__NotificationUrl: ${BEPAID_NOTIFICATION_URL:-https://your-ngrok-url.ngrok-free.dev/api/payments/webhook}
+    depends_on:
+      mssql-payments:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
 
   gateway:
     build:

@@ -127,18 +127,60 @@ export default function PaymentPage() {
 
   const statusName = rental.activityStatus.name as RentActivityStatus;
 
-  if (statusName === 'Active' || statusName === 'Completed') {
+  if (paymentKind === 'remaining'
+    && statusName !== 'Active'
+    && statusName !== 'Completed'
+    && (rental.fineOutstanding ?? 0) === 0
+    && (rental.additionalOutstanding ?? 0) === 0) {
+    return (
+      <div style={{ maxWidth: 600, margin: '0 auto', padding: '64px 32px' }}>
+        <Result
+          status="warning"
+          icon={<WarningOutlined style={{ color: '#f97316', fontSize: 72 }} />}
+          title={<Text style={{ color: '#fff', fontSize: 24 }}>Сначала оплатите депозит</Text>}
+          subTitle={
+            <Text style={{ color: '#888' }}>
+              Аренда #{rental.id.slice(0, 8)} ещё не активна. Доплата будет доступна после оплаты депозита и подписания договора.
+            </Text>
+          }
+          extra={
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <Button
+                type="primary"
+                size="large"
+                icon={<CreditCardOutlined />}
+                loading={payMutation.isPending}
+                onClick={() => payMutation.mutate('Deposit')}
+                block
+              >
+                Оплатить депозит {(rental.depositAmount ?? 0).toFixed(2)} Br
+              </Button>
+              <Button block onClick={() => navigate(`/my-rentals/${id}`)}>
+                К аренде
+              </Button>
+            </Space>
+          }
+        />
+      </div>
+    );
+  }
+
+  if (paymentKind === 'remaining' && (rental.remainingAmount ?? 0) <= 0) {
     return (
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '64px 32px' }}>
         <Result
           status="success"
           icon={<CheckCircleOutlined style={{ color: '#22c55e', fontSize: 72 }} />}
-          title={<Text style={{ color: '#fff', fontSize: 24 }}>Оплата прошла успешно</Text>}
-          subTitle={<Text style={{ color: '#888' }}>Аренда #{rental.id.slice(0, 8)} {statusName === 'Active' ? 'активна' : 'завершена'}</Text>}
+          title={<Text style={{ color: '#fff', fontSize: 24 }}>Нечего доплачивать</Text>}
+          subTitle={
+            <Text style={{ color: '#888' }}>
+              Аренда #{rental.id.slice(0, 8)} полностью оплачена
+            </Text>
+          }
           extra={
             <Space>
               <Button type="primary" onClick={() => navigate(`/my-rentals/${id}`)}>
-                Перейти к аренде
+                К аренде
               </Button>
               <Button onClick={() => navigate('/my-rentals')}>
                 Все аренды

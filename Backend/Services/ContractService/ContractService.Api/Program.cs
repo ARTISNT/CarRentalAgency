@@ -14,6 +14,7 @@ using ContractService.Domain.Contracts;
 using ContractService.Infrastructure.ExternalServices;
 using ContractService.Infrastructure.Messaging.Consumers;
 using ContractService.Infrastructure.Persistence;
+using ContractService.Api.Common;
 using ContractService.Infrastructure.Persistence.Repositories;
 using ContractService.Infrastructure.Security;
 using ContractService.Infrastructure.Services.ContractsGeneration;
@@ -21,6 +22,7 @@ using ContractService.Infrastructure.Services.ContractsSigning;
 using ContractService.OpenApiConfiguration;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
@@ -173,7 +175,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ContractServiceContext>();
-    await db.Database.MigrateAsync();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<ContractServiceContext>>();
+    await MigrationRunner.RunWithRetryAsync(db, logger);
 }
 
 // Configure the HTTP request pipeline.

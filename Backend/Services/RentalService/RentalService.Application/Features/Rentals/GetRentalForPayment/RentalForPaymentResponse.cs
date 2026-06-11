@@ -1,5 +1,4 @@
 namespace RentalService.Application.Features.Rentals.GetRentalForPayment;
-
 public class RentalForPaymentResponse
 {
     public Guid RentalId { get; set; }
@@ -16,6 +15,8 @@ public class RentalForPaymentResponse
     public decimal FineOutstanding { get; set; }
     public decimal AdditionalOutstanding { get; set; }
     public string PaymentStatus { get; set; } = default!;
+    public string ActivityStatus { get; set; } = default!;
+    public DateTime? DepositPaidAt { get; set; }
     public List<PaymentTransactionDto> Transactions { get; set; } = new();
 }
 

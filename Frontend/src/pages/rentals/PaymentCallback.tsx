@@ -23,7 +23,7 @@ export default function PaymentCallback() {
     paymentApi.confirm(token)
       .then((res) => {
         setStatus('success');
-        setTimeout(() => navigate(`/my-rentals/${res.rentalId}`, { replace: true }), 2000);
+        setTimeout(() => navigate(`/my-rentals/${res.rentalId}?paid=1`, { replace: true }), 2000);
       })
       .catch(() => {
         setStatus('error');

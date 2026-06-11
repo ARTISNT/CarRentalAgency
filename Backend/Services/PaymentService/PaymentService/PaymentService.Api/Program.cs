@@ -1,7 +1,9 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using PaymentService.Api.Common;
 using PaymentService.Application.Extensions;
 using PaymentService.Infrastructure.Extensions;
 using PaymentService.Infrastructure.Persistence.DB;
@@ -51,7 +53,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<PaymentContext>();
-    await db.Database.MigrateAsync();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<PaymentContext>>();
+    await MigrationRunner.RunWithRetryAsync(db, logger);
 }
 
 if (app.Environment.IsDevelopment())

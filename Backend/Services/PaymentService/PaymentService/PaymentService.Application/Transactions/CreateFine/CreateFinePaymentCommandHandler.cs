@@ -27,6 +27,10 @@ namespace PaymentService.Application.Transactions.CreateFine
 
             var rental = await _rentalClient.GetRentalByIdAsync(request.RentalId);
 
+            if (rental.ActivityStatus != "Active" && rental.ActivityStatus != "Completed")
+                throw new InvalidOperationException(
+                    "Cannot pay fine for a rental that hasn't started yet.");
+
             if (request.Amount > rental.FineOutstanding)
             {
                 throw new InvalidOperationException(

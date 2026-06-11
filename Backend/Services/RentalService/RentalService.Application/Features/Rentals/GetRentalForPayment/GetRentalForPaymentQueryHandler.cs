@@ -51,6 +51,8 @@ public class GetRentalForPaymentQueryHandler(
             FineOutstanding = payment.FineOutstanding.Amount,
             AdditionalOutstanding = payment.AdditionalOutstanding.Amount,
             PaymentStatus = payment.Status.Name,
+            ActivityStatus = rental.ActivityStatus.Name,
+            DepositPaidAt = rental.DepositPaidAt,
             Transactions = transactions
         };
     }

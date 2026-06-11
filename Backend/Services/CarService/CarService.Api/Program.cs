@@ -12,6 +12,7 @@ using CarService.OpenApiConfiguration;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
@@ -137,7 +138,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<CarServiceDbContext>();
-    await db.Database.MigrateAsync();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<CarServiceDbContext>>();
+    await CarService.Api.Common.MigrationRunner.RunWithRetryAsync(db, logger);
 }
 
 // Configure the HTTP request pipeline.

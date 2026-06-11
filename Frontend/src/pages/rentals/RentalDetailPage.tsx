@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Alert,
@@ -86,6 +86,7 @@ const MAX_CONTRACT_POLL_ATTEMPTS = 20;
 export default function RentalDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const pollCountRef = useRef(0);
   const [pollExpired, setPollExpired] = useState(false);
@@ -95,6 +96,15 @@ export default function RentalDetailPage() {
     queryFn: () => rentalApi.getById(id!),
     enabled: !!id,
   });
+
+  useEffect(() => {
+    if (searchParams.get('paid') === '1') {
+      message.success('Оплата прошла успешно');
+      const next = new URLSearchParams(searchParams);
+      next.delete('paid');
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const { data: contracts } = useQuery({
     queryKey: ['contract-by-rental', id],
@@ -188,6 +198,39 @@ export default function RentalDetailPage() {
       damageDescription: values.damageDescription || null,
     });
   };
+
+  const { data: transactions } = useQuery({
+    queryKey: ['payment-transactions', id],
+    queryFn: () => paymentApi.getTransactions(id!),
+    enabled: !!id,
+    refetchInterval: 5000,
+  });
+
+  const depositTransaction = transactions?.find((t) => t.type === 'Deposit');
+  const depositRefundTransaction = transactions?.find((t) => t.type === 'DepositRefund');
+  const depositRefunded = depositTransaction?.isRefunded ?? !!depositRefundTransaction;
+
+  const refundMutation = useMutation({
+    mutationFn: () => paymentApi.refund(id!),
+    onSuccess: () => {
+      message.success('Депозит возвращён на карту');
+      queryClient.invalidateQueries({ queryKey: ['rental', id] });
+      queryClient.invalidateQueries({ queryKey: ['payment-transactions', id] });
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      const msg = e?.response?.data?.message ?? e?.message ?? 'Ошибка при возврате депозита';
+      message.error(msg);
+    },
+  });
+
+  const canRefundDeposit =
+    rental
+      ? (rental.activityStatus.name === 'Completed' || rental.activityStatus.name === 'Cancelled') &&
+        !!depositTransaction &&
+        !depositRefunded &&
+        (rental.fineOutstanding ?? 0) === 0
+      : false;
 
   if (isLoading) {
     return (
@@ -497,7 +540,7 @@ export default function RentalDetailPage() {
                 title={<Text style={{ color: '#888' }}>Длительность</Text>}
                 value={Math.max(dayjs(rental.endDate).diff(dayjs(rental.startDate), 'day'), 1)}
                 suffix="дн."
-                valueStyle={{ color: '#fff' }}
+                styles={{ content: { color: '#fff' } }}
               />
             </Card>
 
@@ -553,10 +596,22 @@ export default function RentalDetailPage() {
                 <Title level={5} style={{ color: '#fff', marginBottom: 12 }}>
                   Оплата
                 </Title>
-                <div style={{ marginBottom: 8 }}>
+                <div style={{ marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                   <Tag style={{ backgroundColor: paymentStatusColors[rental.paymentStatus] || '#888', color: '#fff', border: 'none' }}>
                     {paymentStatusLabels[rental.paymentStatus] || rental.paymentStatus}
                   </Tag>
+                  {rental.paymentStatus === 'Paid' && (rental.remainingAmount ?? 0) <= 0 && (
+                    <Tag style={{ backgroundColor: '#22c55e', color: '#fff', border: 'none' }}>
+                      <CheckCircleOutlined style={{ marginRight: 4 }} />
+                      Оплачено полностью
+                    </Tag>
+                  )}
+                  {depositRefunded && (
+                    <Tag style={{ backgroundColor: '#22c55e', color: '#fff', border: 'none' }}>
+                      <RollbackOutlined style={{ marginRight: 4 }} />
+                      Депозит возвращён
+                    </Tag>
+                  )}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -626,7 +681,8 @@ export default function RentalDetailPage() {
 
                 {(rental.remainingAmount ?? 0) > 0
                   && (rental.fineOutstanding ?? 0) === 0
-                  && (rental.additionalOutstanding ?? 0) === 0 && (
+                  && (rental.additionalOutstanding ?? 0) === 0
+                  && (statusName === 'Active' || statusName === 'Completed') && (
                     <Button
                       type="primary"
                       block
@@ -636,6 +692,55 @@ export default function RentalDetailPage() {
                     >
                       Доплатить {(rental.remainingAmount ?? 0).toFixed(2)} Br
                     </Button>
+                  )}
+
+                {canRefundDeposit && (
+                  <>
+                    <Divider style={{ borderColor: 'rgba(255,255,255,0.06)', margin: '12px 0' }} />
+                    <Alert
+                      type="success"
+                      showIcon
+                      icon={<CheckCircleOutlined />}
+                      message={
+                        <span>
+                          Аренда завершена. Депозит <b>{(rental.depositAmount ?? 0).toFixed(2)} Br</b> готов к возврату.
+                        </span>
+                      }
+                      description="Средства будут переведены на карту, с которой был внесён депозит."
+                      style={{ marginBottom: 8 }}
+                    />
+                    <Button
+                      block
+                      icon={<RollbackOutlined />}
+                      loading={refundMutation.isPending}
+                      onClick={() => {
+                        Modal.confirm({
+                          title: 'Вернуть депозит?',
+                          content: `Будет возвращено ${(rental.depositAmount ?? 0).toFixed(2)} Br на карту, с которой был внесён депозит. Действие необратимо.`,
+                          okText: 'Вернуть',
+                          okType: 'primary',
+                          okButtonProps: { style: { background: '#22c55e', borderColor: '#22c55e' } },
+                          cancelText: 'Отмена',
+                          onOk: () => refundMutation.mutate(),
+                        });
+                      }}
+                    >
+                      Вернуть депозит {(rental.depositAmount ?? 0).toFixed(2)} Br
+                    </Button>
+                  </>
+                )}
+
+                {!canRefundDeposit
+                  && (statusName === 'Completed' || statusName === 'Cancelled')
+                  && depositTransaction
+                  && !depositRefunded
+                  && (rental.fineOutstanding ?? 0) > 0 && (
+                    <Alert
+                      type="warning"
+                      showIcon
+                      message="Сначала погасите штраф, чтобы вернуть депозит."
+                      style={{ marginTop: 12 }}
+                    />
                   )}
 
                 <TransactionList rentalId={id!} />
@@ -654,7 +759,7 @@ export default function RentalDetailPage() {
         okText="Завершить"
         cancelText="Отмена"
         okButtonProps={{ style: { background: '#22c55e', borderColor: '#22c55e' } }}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={endForm}
@@ -720,7 +825,7 @@ export default function RentalDetailPage() {
         confirmLoading={renewMutation.isPending}
         okText="Продлить"
         cancelText="Отмена"
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={renewForm}

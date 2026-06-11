@@ -1,5 +1,6 @@
 using Contracts.PaymentEvents;
 using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using RentalService.Domain.Payments;
 using RentalService.Domain.Rentals;
@@ -25,36 +26,47 @@ public class DepositPaidConsumer(
         }
 
         logger.LogInformation(
-            "Processing DepositPaidEvent: Rental {RentalId}, DepositPaidAt before: {DepositPaidAt}, ContractSignedAt: {ContractSignedAt}, Status: {Status}",
-            msg.RentalId, rental.DepositPaidAt, rental.ContractSignedAt, rental.ActivityStatus.Name);
+            "Processing DepositPaidEvent: Rental {RentalId}, Type: {Type}, DepositPaidAt before: {DepositPaidAt}, ContractSignedAt: {ContractSignedAt}, Status: {Status}",
+            msg.RentalId, msg.PaymentTypeName, rental.DepositPaidAt, rental.ContractSignedAt, rental.ActivityStatus.Name);
 
-        if (rental.DepositPaidAt.HasValue)
+        if (msg.PaymentTypeName is "Deposit" or "FullPayment")
         {
-            logger.LogInformation(
-                "Rental {RentalId} deposit already paid at {DepositPaidAt}, skipping processing",
-                msg.RentalId, rental.DepositPaidAt);
-            return;
-        }
+            if (!rental.DepositPaidAt.HasValue)
+            {
+                rental.MarkDepositPaid(msg.PaidAt);
 
-        rental.MarkDepositPaid(msg.PaidAt);
+                if (rental.ContractSignedAt.HasValue)
+                {
+                    rental.StartRental();
+                    logger.LogInformation("Rental {RentalId} started after deposit paid and contract signed", msg.RentalId);
+                }
+                else
+                {
+                    logger.LogInformation("Rental {RentalId} deposit paid, waiting for contract signing", msg.RentalId);
+                }
 
-        if (rental.ContractSignedAt.HasValue)
-        {
-            rental.StartRental();
-            logger.LogInformation("Rental {RentalId} started after deposit paid and contract signed", msg.RentalId);
+                await rentalRepository.UpdateRentalAsync(rental, context.CancellationToken);
+            }
+            else
+            {
+                logger.LogInformation(
+                    "Rental {RentalId} deposit already paid at {DepositPaidAt}, will still ensure transaction row exists",
+                    msg.RentalId, rental.DepositPaidAt);
+            }
         }
         else
         {
-            logger.LogInformation("Rental {RentalId} deposit paid, waiting for contract signing", msg.RentalId);
+            logger.LogInformation(
+                "Processing non-deposit event for Rental {RentalId}, Type: {Type}, Amount: {Amount}",
+                msg.RentalId, msg.PaymentTypeName, msg.Amount);
         }
 
-        await rentalRepository.UpdateRentalAsync(rental, context.CancellationToken);
-
-        await AddDepositTransactionAsync(rental, msg, context.CancellationToken);
+        var resolvedPaymentId = await ResolvePaymentIdAsync(rental, msg, context.CancellationToken);
+        await AddDepositTransactionWithRetryAsync(resolvedPaymentId, msg, context.CancellationToken);
 
         logger.LogInformation(
-            "DepositPaidEvent saved: Rental {RentalId}, DepositPaidAt: {DepositPaidAt}, ContractSignedAt: {ContractSignedAt}, Status: {Status}",
-            msg.RentalId, rental.DepositPaidAt, rental.ContractSignedAt, rental.ActivityStatus.Name);
+            "DepositPaidEvent saved: Rental {RentalId}, Type: {Type}, DepositPaidAt: {DepositPaidAt}, ContractSignedAt: {ContractSignedAt}, Status: {Status}",
+            msg.RentalId, msg.PaymentTypeName, rental.DepositPaidAt, rental.ContractSignedAt, rental.ActivityStatus.Name);
 
         if (!rental.ContractSignedAt.HasValue)
         {
@@ -66,30 +78,100 @@ public class DepositPaidConsumer(
                 rental.StartRental();
                 await rentalRepository.UpdateRentalAsync(rental, context.CancellationToken);
 
-                await AddDepositTransactionAsync(rental, msg, context.CancellationToken);
+                var resolvedPaymentIdAfterReread = await ResolvePaymentIdAsync(rental, msg, context.CancellationToken);
+                await AddDepositTransactionWithRetryAsync(resolvedPaymentIdAfterReread, msg, context.CancellationToken);
 
                 logger.LogInformation("Rental {RentalId} started after re-read (deposit consumer)", msg.RentalId);
             }
         }
     }
 
-    private async Task AddDepositTransactionAsync(Rental rental, DepositPaidIntegrationEvent msg, CancellationToken cancellationToken)
+    private async Task<Guid?> ResolvePaymentIdAsync(
+        Rental rental,
+        DepositPaidIntegrationEvent msg,
+        CancellationToken cancellationToken)
     {
-        if (!rental.PaymentId.HasValue)
+        if (rental.PaymentId.HasValue && rental.PaymentId.Value != Guid.Empty)
+        {
+            logger.LogInformation(
+                "Resolved PaymentId {PaymentId} from rental snapshot for Rental {RentalId}",
+                rental.PaymentId.Value, msg.RentalId);
+            return rental.PaymentId.Value;
+        }
+
+        var payment = await paymentRepository.GetPaymentByRentIdAsync(rental.Id, cancellationToken);
+        if (payment is null)
+        {
+            logger.LogWarning(
+                "Rental {RentalId} has no PaymentId on the aggregate and no Payment found by RentalId, skipping payment transaction",
+                msg.RentalId);
+            return null;
+        }
+
+        logger.LogInformation(
+            "Resolved PaymentId {PaymentId} via Payment lookup for Rental {RentalId}",
+            payment.Id, msg.RentalId);
+        return payment.Id;
+    }
+
+    private async Task AddDepositTransactionWithRetryAsync(
+        Guid? paymentId,
+        DepositPaidIntegrationEvent msg,
+        CancellationToken cancellationToken)
+    {
+        if (!paymentId.HasValue)
         {
             logger.LogWarning("Rental {RentalId} has no PaymentId, skipping payment transaction", msg.RentalId);
             return;
         }
 
-        var payment = await paymentRepository.GetPaymentAsync(rental.PaymentId.Value, cancellationToken);
+        const int maxAttempts = 5;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                await AddDepositTransactionAsync(paymentId.Value, msg, cancellationToken);
+                return;
+            }
+            catch (DbUpdateConcurrencyException) when (attempt < maxAttempts)
+            {
+                var delay = TimeSpan.FromMilliseconds(100 * attempt);
+                logger.LogWarning(
+                    "Concurrency conflict on Payment {PaymentId} for Rental {RentalId} (attempt {Attempt}/{MaxAttempts}), retrying in {Delay}ms",
+                    paymentId.Value, msg.RentalId, attempt, maxAttempts, delay.TotalMilliseconds);
+                await Task.Delay(delay, cancellationToken);
+            }
+            catch (DbUpdateException ex) when (attempt < maxAttempts)
+            {
+                var delay = TimeSpan.FromMilliseconds(100 * attempt);
+                logger.LogWarning(ex,
+                    "DbUpdateException on Payment {PaymentId} for Rental {RentalId} (attempt {Attempt}/{MaxAttempts}): {Message}. Retrying in {Delay}ms",
+                    paymentId.Value, msg.RentalId, attempt, maxAttempts, ex.InnerException?.Message ?? ex.Message, delay.TotalMilliseconds);
+                await Task.Delay(delay, cancellationToken);
+            }
+        }
+    }
+
+    private async Task AddDepositTransactionAsync(
+        Guid paymentId,
+        DepositPaidIntegrationEvent msg,
+        CancellationToken cancellationToken)
+    {
+        var payment = await paymentRepository.GetPaymentAsync(paymentId, cancellationToken);
         if (payment is null)
         {
             logger.LogWarning("Payment {PaymentId} not found for Rental {RentalId}, skipping payment transaction",
-                rental.PaymentId.Value, msg.RentalId);
+                paymentId, msg.RentalId);
             return;
         }
 
-        var externalTransactionId = $"{msg.PaymentTypeName}-{msg.RentalId:D}";
+        var externalTransactionId = msg.PaymentTypeName switch
+        {
+            "Fine" => $"fine-{msg.RentalId:D}",
+            "Additional" => $"renewal-{msg.RentalId:D}",
+            "FullPayment" => $"fullpayment-{msg.RentalId:D}",
+            _ => $"deposit-{msg.RentalId:D}",
+        };
 
         if (payment.Transactions.Any(t => t.ExternalTransactionId == externalTransactionId))
         {

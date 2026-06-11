@@ -40,7 +40,7 @@ namespace PaymentService.Application.Transactions.Update
                 return;
             }
 
-            var transaction = await _unitOfWork.Transactions.GetByRentalIdAsync(Guid.Parse(notification.Transaction.TrakingId));
+            var transaction = await _unitOfWork.Transactions.GetByTrackingIdAsync(notification.Transaction.TrakingId);
 
             if (transaction is null)
                 throw new ArgumentNullException("Transaction was not found");

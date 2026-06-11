@@ -27,6 +27,10 @@ namespace PaymentService.Application.Transactions.CreateAdditional
 
             var rental = await _rentalClient.GetRentalByIdAsync(request.RentalId);
 
+            if (rental.ActivityStatus != "Active" && rental.ActivityStatus != "Completed")
+                throw new InvalidOperationException(
+                    "Cannot pay additional for a rental that hasn't started yet.");
+
             if (request.Amount > rental.AdditionalOutstanding)
             {
                 throw new InvalidOperationException(

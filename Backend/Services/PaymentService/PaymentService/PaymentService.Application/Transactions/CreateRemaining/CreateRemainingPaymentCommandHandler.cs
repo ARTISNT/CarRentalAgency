@@ -24,6 +24,10 @@ namespace PaymentService.Application.Transactions.CreateRemaining
         {
             var rental = await _rentalClient.GetRentalByIdAsync(request.RentalId);
 
+            if (rental.ActivityStatus != "Active" && rental.ActivityStatus != "Completed")
+                throw new InvalidOperationException(
+                    "Cannot pay remaining for a rental that hasn't started yet. Pay the deposit first.");
+
             if (rental.RemainingAmount <= 0)
                 throw new InvalidOperationException("Nothing left to pay");
 

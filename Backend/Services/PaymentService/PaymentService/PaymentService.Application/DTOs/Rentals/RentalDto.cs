@@ -15,6 +15,8 @@ namespace PaymentService.Application.DTOs.Rentals
         decimal FineOutstanding,
         decimal AdditionalOutstanding,
         string PaymentStatus,
+        string ActivityStatus,
+        DateTime? DepositPaidAt,
         List<PaymentTransactionDto> Transactions
     );
 

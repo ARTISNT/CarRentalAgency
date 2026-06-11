@@ -1,6 +1,7 @@
 using System.Text;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using RentalService.Api.BackgroundServices;
 using RentalService.Api.OpenApiConfiguration;
@@ -183,7 +184,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<RentalServiceContext>();
-    await db.Database.MigrateAsync();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<RentalServiceContext>>();
+    await RentalService.Api.Common.MigrationRunner.RunWithRetryAsync(db, logger);
 }
 
 // Configure the HTTP request pipeline.

@@ -64,6 +64,14 @@ namespace PaymentService.Infrastructure.Implementations.Repositories
             return await _paymentContext.Transactions
                 .FirstOrDefaultAsync(t => t.ExternalToken == token);
         }
+        public async Task<Transaction?> GetByTrackingIdAsync(string trackingId)
+        {
+            if (string.IsNullOrWhiteSpace(trackingId))
+                return null;
+
+            return await _paymentContext.Transactions
+                .FirstOrDefaultAsync(t => t.ExternalToken == trackingId);
+        }
         public async Task DeleteAsync(Transaction transaction)
         {
             _paymentContext.Transactions.Remove(transaction);

@@ -128,7 +128,9 @@ public class ContractConfiguration : IEntityTypeConfiguration<Contract>
 
             additions.Property(x => x.PreviousEndDate).IsRequired();
             additions.Property(x => x.NewEndDate).IsRequired();
-            additions.Property(x => x.AdditionalCost).IsRequired();
+            additions.Property(x => x.AdditionalCost)
+                .HasPrecision(18, 2)
+                .IsRequired();
             additions.Property(x => x.CreatedAt).IsRequired();
 
             // Snapshot
@@ -145,8 +147,12 @@ public class ContractConfiguration : IEntityTypeConfiguration<Contract>
             act.ToTable("ContractReturnActs");
 
             act.Property(x => x.Mileage).IsRequired();
-            act.Property(x => x.FuelLevel).IsRequired();
-            act.Property(x => x.PenaltyAmount).IsRequired();
+            act.Property(x => x.FuelLevel)
+                .HasPrecision(18, 2)
+                .IsRequired();
+            act.Property(x => x.PenaltyAmount)
+                .HasPrecision(18, 2)
+                .IsRequired();
 
             act.Property(x => x.DamageDescription)
                 .HasMaxLength(1000);
