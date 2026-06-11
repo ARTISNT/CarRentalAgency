@@ -1,13 +1,13 @@
 using AutoMapper;
 using Contracts.ContractEvents;
 using ContractService.Application.Abstractions.External;
-using ContractService.Application.Abstractions.Security;
-using ContractService.Application.Authorization;
 using ContractService.Application.Exceptions.Contracts;
+using ContractService.Application.Options;
 using ContractService.Application.Services;
 using ContractService.Domain.Contracts;
 using MassTransit;
 using MediatR;
+using Microsoft.Extensions.Options;
 
 namespace ContractService.Application.Features.Contracts.CreateContract;
 
@@ -17,8 +17,7 @@ public class CreateContractCommandHandler(
     ICarExternalService carExternalService,
     IRentalExternalService rentalExternalService,
     IClientExternalService clientExternalService,
-    IClientContext clientContext,
-    IContractAuthorizationService contractAuthorizationService,
+    IOptions<DocumentTemplateOptions> options,
     IMapper mapper,
     ContractDocumentService contractDocumentService,
     IPublishEndpoint publishEndpoint)
@@ -26,15 +25,12 @@ public class CreateContractCommandHandler(
 {
     public async Task Handle(CreateContractCommand request, CancellationToken cancellationToken)
     {
-        var contractTemplate = await contractTemplateRepository.GetContractTemplatesAsync(request.ContractTemplateId, cancellationToken) 
+        var contractTemplate = await contractTemplateRepository.GetContractTemplatesAsync(options.Value.ContractTemplateId, cancellationToken) 
                                ?? throw new ContractNotFoundException("Contract template not found");
-        
-        var clientId = request.ClientId ?? clientContext.ClientId;
-        contractAuthorizationService.EnsureCanCreateContracts(clientId);
 
         var carTask = carExternalService.GetCarForContractAsync(request.CarId, cancellationToken);
         var rentalTask = rentalExternalService.GetRentalForContractAsync(request.RentalId, cancellationToken);
-        var clientTask = clientExternalService.GetClientForRentAsync(clientId, cancellationToken);
+        var clientTask = clientExternalService.GetClientForRentAsync(request.ClientId, cancellationToken);
 
         await Task.WhenAll(carTask, rentalTask, clientTask);
 
@@ -43,9 +39,9 @@ public class CreateContractCommandHandler(
         var rentalResponse = await rentalTask;
 
         var contract = new Contract(
-            request.ContractTemplateId,
+            options.Value.ContractTemplateId,
             request.CarId,
-            clientId,
+            request.ClientId,
             rentalResponse.RentalId,
             mapper.Map<ClientSnapshot>(clientResponse),
             mapper.Map<ContractAutoSnapshot>(carResponse),
@@ -54,13 +50,13 @@ public class CreateContractCommandHandler(
 
         await contractRepository.AddContractAsync(contract, cancellationToken);
         await contractDocumentService.GenerateContract(
-            clientId,
+            request.ClientId,
             contractTemplate.Content,
             contract);
 
         var integrationEvent = new ContractCreatedIntegrationEvent(
             contract.Id,
-            clientId,
+            request.ClientId,
             contract.RentalId,
             contract.CreatedAt);
         await publishEndpoint.Publish(integrationEvent, cancellationToken);

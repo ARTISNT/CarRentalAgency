@@ -1,3 +1,4 @@
+using ContractService.Domain.Common;
 using ContractService.Domain.Contracts;
 using MediatR;
 
@@ -9,11 +10,14 @@ public class CreateContractTemplateCommandHandler(
 {
     public async Task Handle(CreateContractTemplateCommand request, CancellationToken cancellationToken)
     {
+        var documentType = Enumeration.FromName<DocumentType>(request.DocumentType);
+        var validFrom = request.ValidFrom ?? DateTime.UtcNow;
+
         var template = new ContractTemplate(
             request.Name,
             request.Content,
-            request.ValidFrom,
-            request.DocumentType,
+            validFrom,
+            documentType,
             request.Version);
 
         await contractTemplateRepository.AddContractTemplateAsync(template, cancellationToken);

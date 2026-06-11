@@ -30,7 +30,9 @@ public class ContractMappingResponseProfile : Profile
             .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.Rental.EndDate))
             .ForMember(dest => dest.EstimatedPrice, opt => opt.MapFrom(src => src.Rental.EstimatedPrice))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.Name))
-            .ForMember(dest => dest.PdfPath, opt => opt.Ignore()); 
+            .ForMember(dest => dest.PdfPath, opt => opt.Ignore())
+            .ForMember(dest => dest.RentalId, opt => opt.MapFrom(src => src.RentalId))
+            .ForMember(dest => dest.ClientId, opt => opt.MapFrom(src => src.ClientId)); 
         
         CreateMap<Contract, ContractResponse>()
             .IncludeMembers(src => src.Client);

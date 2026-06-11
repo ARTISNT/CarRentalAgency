@@ -16,14 +16,14 @@ public class RenewContractCommandHandler(
     IContractTemplateRepository contractTemplateRepository)
     : IRequestHandler<RenewContractCommand>
 {
-    private readonly Guid _contractTemplateIdBasic = options.Value.ContractTemplateIdBasic;
+    private readonly Guid _additionTemplateId = options.Value.AdditionTemplateId;
 
     public async Task Handle(RenewContractCommand request, CancellationToken cancellationToken)
     {
         var contract = await contractRepository.GetContractByRentalIdAsync(request.RentalId, cancellationToken)
             ?? throw new ContractNotFoundException("Contract not found");
         
-        var contractTemplate = await contractTemplateRepository.GetContractTemplatesAsync(_contractTemplateIdBasic, cancellationToken)
+        var contractTemplate = await contractTemplateRepository.GetContractTemplatesAsync(_additionTemplateId, cancellationToken)
             ?? throw new ContractNotFoundException("Contract template not found");
 
         var contractTemplateSnapshot = mapper.Map<ContractTemplateSnapshot>(contractTemplate);

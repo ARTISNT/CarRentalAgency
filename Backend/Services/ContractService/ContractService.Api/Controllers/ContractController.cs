@@ -76,7 +76,7 @@ public class ContractController(ISender sender) : ControllerBase
 
     [HttpGet]
     [Route("get-contract-{id}/pdf")]
-    [Authorize(AuthenticationSchemes = "UserAuth", Policy = "ViewAllContracts")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = "ViewContracts")]
     public async Task<IActionResult> GetContractPdf(
         [FromRoute] Guid id,
         [FromQuery] bool signed = false,
@@ -88,9 +88,13 @@ public class ContractController(ISender sender) : ControllerBase
         if (!pdf.Exists)
             return NotFound("PDF file not found");
 
-        var disposition = download ? "attachment" : "inline";
-        Response.Headers.Append("Content-Disposition", $"{disposition}; filename=\"{pdf.FileName}\"");
+        var cd = new System.Net.Http.Headers.ContentDispositionHeaderValue(download ? "attachment" : "inline")
+        {
+            FileName = pdf.FileName,
+            FileNameStar = pdf.FileName,
+        };
+        Response.Headers["Content-Disposition"] = cd.ToString();
 
-        return PhysicalFile(pdf.FilePath, pdf.ContentType);
+        return new PhysicalFileResult(pdf.FilePath, pdf.ContentType);
     }
 }

@@ -18,4 +18,8 @@ public class ContractListResponse
 
     public string PdfPath { get; init; }    
     public DateTime CreatedAt { get; init; }
+    
+    public Guid RentalId { get; init; }
+    
+    public Guid ClientId { get; init; }
 }

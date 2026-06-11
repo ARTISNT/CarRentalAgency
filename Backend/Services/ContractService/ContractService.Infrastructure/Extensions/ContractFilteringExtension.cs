@@ -13,6 +13,11 @@ public static class ContractFilteringExtension
             query = query.Where(c => c.ClientId == specification.ClientId);
         }
 
+        if (specification.RentalId.HasValue)
+        {
+            query = query.Where(c => c.RentalId == specification.RentalId);
+        }
+
         if (!string.IsNullOrWhiteSpace(specification.Status))
         {
             query = query.Where(c => c.Status.Name == specification.Status);

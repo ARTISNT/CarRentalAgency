@@ -6,6 +6,6 @@ namespace ContractService.Application.Features.ContractsTemplates.CreateContract
 public record CreateContractTemplateCommand(
     string Name,
     string Content,
-    int Version,
-    DocumentType DocumentType,
-    DateTime ValidFrom) : IRequest;
+    string DocumentType,
+    int Version = 1,
+    DateTime? ValidFrom = null) : IRequest;

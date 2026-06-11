@@ -2,6 +2,7 @@ namespace ContractService.Application.Options;
 
 public class DocumentTemplateOptions
 {
-    public Guid ContractTemplateIdBasic { get; set; }
+    public Guid AdditionTemplateId { get; set; }
+    public Guid ContractTemplateId { get; set; }
     public Guid ReturnActTemplateId { get; set; }
 }

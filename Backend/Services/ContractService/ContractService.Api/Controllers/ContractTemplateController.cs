@@ -1,3 +1,4 @@
+using ContractService.Application.Common;
 using ContractService.Application.Features.ContractsTemplates.ActivateContractTemplate;
 using ContractService.Application.Features.ContractsTemplates.CreateContractTemplate;
 using ContractService.Application.Features.ContractsTemplates.DeactivateContractTemplate;
@@ -6,6 +7,7 @@ using ContractService.Application.Features.ContractsTemplates.GetContractTemplat
 using ContractService.Application.Features.ContractsTemplates.RenameContractTemplate;
 using ContractService.Application.Features.ContractsTemplates.UpdateContractTemplateContent;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ContractService.Controllers;
@@ -16,6 +18,7 @@ public class ContractTemplateController(ISender sender) : ControllerBase
 {
     [HttpGet]
     [Route("get-templates")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.InteractWithContractTemplates)]
     public async Task<IActionResult> GetTemplatesAsync(CancellationToken cancellationToken)
     {
         var templates = await sender.Send(new GetContractTemplatesQuery(), cancellationToken);
@@ -24,6 +27,7 @@ public class ContractTemplateController(ISender sender) : ControllerBase
 
     [HttpGet]
     [Route("get-template-{id}")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.InteractWithContractTemplates)]
     public async Task<IActionResult> GetTemplateAsync([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         var template = await sender.Send(new GetContractTemplateQuery(id), cancellationToken);
@@ -32,6 +36,7 @@ public class ContractTemplateController(ISender sender) : ControllerBase
 
     [HttpPost]
     [Route("create-template")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.InteractWithContractTemplates)]
     public async Task<IActionResult> CreateTemplateAsync(
         [FromBody] CreateContractTemplateCommand command, CancellationToken cancellationToken)
     {
@@ -41,6 +46,7 @@ public class ContractTemplateController(ISender sender) : ControllerBase
 
     [HttpPut]
     [Route("update-content")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.InteractWithContractTemplates)]
     public async Task<IActionResult> UpdateContentAsync(
         [FromBody] UpdateContractTemplateContentCommand command, CancellationToken cancellationToken)
     {
@@ -50,6 +56,7 @@ public class ContractTemplateController(ISender sender) : ControllerBase
 
     [HttpPut]
     [Route("rename")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.InteractWithContractTemplates)]
     public async Task<IActionResult> RenameAsync(
         [FromBody] RenameContractTemplateCommand command, CancellationToken cancellationToken)
     {
@@ -59,6 +66,7 @@ public class ContractTemplateController(ISender sender) : ControllerBase
 
     [HttpPut]
     [Route("activate-{id}")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.InteractWithContractTemplates)]
     public async Task<IActionResult> ActivateAsync([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         await sender.Send(new ActivateContractTemplateCommand(id), cancellationToken);
@@ -67,6 +75,7 @@ public class ContractTemplateController(ISender sender) : ControllerBase
 
     [HttpPut]
     [Route("deactivate-{id}")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.InteractWithContractTemplates)]
     public async Task<IActionResult> DeactivateAsync([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         await sender.Send(new DeactivateContractTemplateCommand(id), cancellationToken);

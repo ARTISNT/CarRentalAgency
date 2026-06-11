@@ -4,6 +4,8 @@ using ContractService.Application.Abstractions.Security;
 using ContractService.Application.Abstractions.Services;
 using ContractService.Application.Authorization;
 using ContractService.Application.Common;
+using ContractService.Application.Exceptions;
+using ContractService.Application.Exceptions.Contracts;
 using ContractService.Application.Features.Contracts.CreateContract;
 using ContractService.Application.Features.Contracts.GetContract;
 using ContractService.Application.Options;
@@ -123,6 +125,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddMassTransit(busConfigurator =>
 {
     busConfigurator.SetKebabCaseEndpointNameFormatter();
+    busConfigurator.AddConsumer<RentalCreatedConsumer>();
     busConfigurator.AddConsumer<RentalRenewedConsumer>();
     busConfigurator.AddConsumer<RentalEndedConsumer>();
     busConfigurator.AddConsumer<RentalCancelledConsumer>();
@@ -130,13 +133,34 @@ builder.Services.AddMassTransit(busConfigurator =>
     busConfigurator.UsingRabbitMq((context, configurator)=>
     {
         string host = builder.Configuration["MessageBroker:Host"] ?? "localhost";
-        ushort port = builder.Configuration.GetValue<ushort>("MessageBroker:Port", 5672); 
-        
-        
+        ushort port = builder.Configuration.GetValue<ushort>("MessageBroker:Port", 5672);
+
+
         configurator.Host(host, port, "/", h =>
         {
             h.Username(builder.Configuration["MessageBroker:User"]);
             h.Password(builder.Configuration["MessageBroker:Password"]);
+        });
+
+        configurator.ReceiveEndpoint("contract-service-rental-created", e =>
+        {
+            e.UseMessageRetry(r => r
+                .Exponential(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(3))
+                .Handle<Exception>(ex => ex is not InvalidOperationException or KeyNotFoundException));
+
+            e.ConfigureConsumer<RentalCreatedConsumer>(context);
+        });
+        configurator.ReceiveEndpoint("contract-service-rental-renewed", e =>
+        {
+            e.ConfigureConsumer<RentalRenewedConsumer>(context);
+        });
+        configurator.ReceiveEndpoint("contract-service-rental-ended", e =>
+        {
+            e.ConfigureConsumer<RentalEndedConsumer>(context);
+        });
+        configurator.ReceiveEndpoint("contract-service-rental-cancelled", e =>
+        {
+            e.ConfigureConsumer<RentalCancelledConsumer>(context);
         });
 
         configurator.ConfigureEndpoints(context);
@@ -145,6 +169,13 @@ builder.Services.AddMassTransit(busConfigurator =>
 
 var app = builder.Build();
 
+// Apply pending EF Core migrations on startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ContractServiceContext>();
+    await db.Database.MigrateAsync();
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -152,6 +183,34 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference(); 
 }
 
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (ForbiddenException)
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new { error = "Forbidden" });
+    }
+    catch (ContractNotFoundException ex)
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+    }
+    catch (ContractTemplateNotFoundException ex)
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+    }
+});
+
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 app.UseHttpsRedirection();
 app.Run();

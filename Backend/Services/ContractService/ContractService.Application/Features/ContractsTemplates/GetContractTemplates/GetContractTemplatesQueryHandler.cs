@@ -21,6 +21,8 @@ public class GetContractTemplatesQueryHandler(
             Name = t.Name,
             Version = t.Version,
             ValidFrom = t.ValidFrom,
+            CreatedOn = t.CreatedOn,
+            DocumentType = t.DocumentType.Name,
             IsActive = t.IsActive
         }).ToList();
     }

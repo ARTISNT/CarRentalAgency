@@ -1,6 +1,8 @@
 using AutoMapper;
-using ContractService.Application.Authorization;
+using ContractService.Application.Abstractions.Security;
+using ContractService.Application.Exceptions;
 using ContractService.Application.Exceptions.Contracts;
+using ContractService.Application.Features.Contracts.GetContracts;
 using ContractService.Domain.Contracts;
 using MediatR;
 
@@ -9,15 +11,18 @@ namespace ContractService.Application.Features.Contracts.GetContract;
 public class GetContractQueryHandler(
     IContractRepository contractRepository,
     IMapper mapper,
-    IContractAuthorizationService contractAuthorizationService) 
-    : IRequestHandler<GetContractQuery, ContractResponse>
+    IClientContext clientContext) 
+    : IRequestHandler<GetContractQuery, ContractListResponse>
 {
-    public async Task<ContractResponse> Handle(GetContractQuery request, CancellationToken cancellationToken)
+    public async Task<ContractListResponse> Handle(GetContractQuery request, CancellationToken cancellationToken)
     {
-        contractAuthorizationService.EnsureCanViewContracts();
         var contract = await contractRepository.GetContractAsync(request.Id, cancellationToken)
                        ?? throw new ContractNotFoundException("Contract not found");
 
-        return mapper.Map<ContractResponse>(contract);
+        if (contract.ClientId != clientContext.ClientId &&
+            !clientContext.Permissions.Contains("ViewAllContracts"))
+            throw new ForbiddenException("No permission");
+
+        return mapper.Map<ContractListResponse>(contract);
     }
 }

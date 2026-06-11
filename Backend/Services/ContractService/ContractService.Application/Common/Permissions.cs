@@ -13,6 +13,7 @@ public static class Permissions
     public const string CancelContracts = "CancelContracts";
     public const string SignContracts = "SignContracts";
     public const string ChangeContractStatus = "ChangeContractStatus";
+    public const string InteractWithContractTemplates = "InteractWithContractTemplates";
     
     public static string[] AllPermissions = typeof(Permissions)
         .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
