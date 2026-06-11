@@ -69,76 +69,147 @@ static Dictionary<string, object> Schemas()
         ["RegisterRequest"] = Schema(
             ("email", Prop("string", "email")),
             ("password", Prop("string", "password")),
-            ("firstName", Prop("string")),
-            ("lastName", Prop("string")),
-            ("phone", Prop("string"))
+            ("phoneNumber", Prop("string"))
         ),
-        ["PassportData"] = Schema(
-            ("passportNumber", Prop("string", null, "Passport number")),
-            ("issuedBy", Prop("string", null, "Issuing authority")),
-            ("issuedDate", Prop("string", "date")),
+        ["PassportRequest"] = Schema(
+            ("name", Prop("string")),
+            ("surname", Prop("string")),
+            ("patronymic", Prop("string")),
+            ("passportNumber", Prop("string")),
+            ("identityNumber", Prop("string")),
+            ("passportIssueDate", Prop("string", "date")),
             ("birthDate", Prop("string", "date"))
         ),
-        ["CarCreate"] = Schema(
-            ("brand", Prop("string")),
-            ("model", Prop("string")),
-            ("year", Prop("integer")),
-            ("licensePlate", Prop("string")),
-            ("dailyRate", Prop("number", "decimal")),
-            ("seats", Prop("integer")),
-            ("transmission", Prop("string", null, null, new[] { "Automatic", "Manual" }))
+        ["CreateCarRequest"] = SchemaOptional(
+            new (string name, object prop)[] {
+                ("releaseDate", Prop("string", "date-time")),
+                ("licensePlate", Prop("string")),
+                ("vinCode", Prop("string")),
+                ("color", Prop("string")),
+                ("model", Prop("string")),
+                ("brand", Prop("string")),
+                ("isFacelift", Prop("boolean")),
+                ("mileage", Prop("number", "double")),
+                ("bodyStyle", Prop("string")),
+                ("transmissionType", Prop("string")),
+                ("driveType", Prop("string")),
+                ("engineType", Prop("string")),
+                ("horsePower", Prop("integer")),
+                ("pricePerHour", Prop("number", "double")),
+                ("carClass", Prop("string")),
+                ("photoUrl", Prop("string"))
+            },
+            new (string name, object prop)[] {
+                ("generation", Prop("string", nullable: true)),
+                ("variant", Prop("string", nullable: true)),
+                ("fuelCurrentLiters", Prop("number", "double", nullable: true)),
+                ("fuelCapacityLiters", Prop("number", "double", nullable: true)),
+                ("batteryCurrentKWh", Prop("number", "double", nullable: true)),
+                ("batteryCapacityKWh", Prop("number", "double", nullable: true)),
+                ("engineVolume", Prop("number", "double", nullable: true)),
+                ("powerReverse", Prop("number", "double", nullable: true))
+            }
         ),
-        ["CarUpdate"] = Schema(
-            ("brand", Prop("string")),
-            ("model", Prop("string")),
-            ("year", Prop("integer")),
-            ("licensePlate", Prop("string")),
-            ("dailyRate", Prop("number", "decimal")),
-            ("seats", Prop("integer")),
-            ("transmission", Prop("string", null, null, new[] { "Automatic", "Manual" })),
-            ("status", Prop("string", null, null, new[] { "Available", "Rented", "Maintenance", "Repair" }))
+        ["UpdateCarRequest"] = SchemaOptional(
+            new (string name, object prop)[] {
+                ("releaseDate", Prop("string", "date-time")),
+                ("licensePlate", Prop("string")),
+                ("vinCode", Prop("string")),
+                ("color", Prop("string")),
+                ("model", Prop("string")),
+                ("brand", Prop("string")),
+                ("isFacelift", Prop("boolean")),
+                ("mileage", Prop("number", "double")),
+                ("bodyStyle", Prop("string")),
+                ("transmissionType", Prop("string")),
+                ("driveType", Prop("string")),
+                ("engineType", Prop("string")),
+                ("engineVolume", Prop("number", "double")),
+                ("horsePower", Prop("integer")),
+                ("powerReverse", Prop("number", "double")),
+                ("pricePerHour", Prop("number", "double")),
+                ("carClass", Prop("string")),
+                ("photoUrl", Prop("string"))
+            },
+            new (string name, object prop)[] {
+                ("generation", Prop("string", nullable: true)),
+                ("variant", Prop("string", nullable: true)),
+                ("fuelCurrentLiters", Prop("number", "double", nullable: true)),
+                ("fuelCapacityLiters", Prop("number", "double", nullable: true)),
+                ("batteryCurrentKWh", Prop("number", "double", nullable: true)),
+                ("batteryCapacityKWh", Prop("number", "double", nullable: true))
+            }
         ),
-        ["CreateRentalRequest"] = Schema(
-            ("carId", Prop("string", "uuid")),
-            ("userId", Prop("string", "uuid")),
-            ("startDate", Prop("string", "date-time")),
-            ("endDate", Prop("string", "date-time"))
+        ["CreateRentalRequest"] = SchemaOptional(
+            new (string name, object prop)[] {
+                ("userId", Prop("string", "uuid")),
+                ("carId", Prop("string", "uuid")),
+                ("startDate", Prop("string", "date-time")),
+                ("endDate", Prop("string", "date-time"))
+            },
+            new (string name, object prop)[] {
+                ("promoCode", Prop("string", nullable: true))
+            }
         ),
-        ["ExtendRentalRequest"] = Schema(
-            ("newEndDate", Prop("string", "date-time"))
+        ["EndRentalRequest"] = SchemaOptional(
+            new (string name, object prop)[] {
+                ("returnDate", Prop("string", "date-time")),
+                ("mileage", Prop("integer")),
+                ("fuelLevel", Prop("number", "decimal")),
+                ("penaltyAmount", Prop("number", "decimal"))
+            },
+            new (string name, object prop)[] {
+                ("damageDescription", Prop("string", nullable: true))
+            }
         ),
-        ["CreateContractRequest"] = Schema(
-            ("rentalId", Prop("string", "uuid")),
-            ("templateId", Prop("string", "uuid"))
+        ["CreateContractRequest"] = SchemaOptional(
+            new (string name, object prop)[] {
+                ("rentalId", Prop("string", "uuid")),
+                ("carId", Prop("string", "uuid")),
+                ("contractTemplateId", Prop("string", "uuid"))
+            },
+            new (string name, object prop)[] {
+                ("clientId", Prop("string", "uuid", nullable: true))
+            }
+        ),
+        ["RenewRentalRequest"] = Schema(
+            ("newDate", Prop("string", "date-time"))
+        ),
+        ["CancelRentalRequest"] = Schema(
+            ("reason", Prop("string", nullable: true))
+        ),
+        ["GetEstimatedRentalPriceRequest"] = Schema(
+            ("promoCode", Prop("string", nullable: true))
         ),
         ["SignContractRequest"] = Schema(
+            ("id", Prop("string", "uuid")),
+            ("signatureBase64", Prop("string", null, "Base64 signature image"))
+        ),
+        ["CancelContractRequest"] = Schema(
             ("contractId", Prop("string", "uuid")),
-            ("signature", Prop("string", null, "Base64 signature image"))
+            ("reason", Prop("string"))
         ),
         ["ChangeContractStatusRequest"] = Schema(
             ("contractId", Prop("string", "uuid")),
-            ("status", Prop("string", null, null, new[] { "Active", "Cancelled", "Completed" }))
+            ("newStatus", Prop("string", null, null, new[] { "Active", "Cancelled", "Completed" }))
         ),
         ["CreateTemplateRequest"] = Schema(
             ("name", Prop("string")),
-            ("content", Prop("string", null, "HTML template content"))
+            ("content", Prop("string", null, "HTML template content")),
+            ("version", Prop("integer")),
+            ("documentType", Prop("string")),
+            ("validFrom", Prop("string", "date-time"))
         ),
         ["UpdateTemplateContentRequest"] = Schema(
-            ("templateId", Prop("string", "uuid")),
+            ("id", Prop("string", "uuid")),
             ("content", Prop("string", null, "HTML template content"))
         ),
         ["RenameTemplateRequest"] = Schema(
-            ("templateId", Prop("string", "uuid")),
+            ("id", Prop("string", "uuid")),
             ("name", Prop("string"))
         ),
-        ["PaymentRequest"] = Schema(
-            ("amount", Prop("number", "decimal")),
-            ("method", Prop("string", null, null, new[] { "CreditCard", "DebitCard", "PayPal" })),
-            ("cardNumber", Prop("string", null, "Last 4 digits or full card number"))
-        ),
-        ["RefundRequest"] = Schema(
-            ("amount", Prop("number", "decimal")),
-            ("reason", Prop("string"))
+        ["ProcessReturnRequest"] = Schema(
+            ("targetStatus", Prop("string"))
         ),
         ["WebhookPayload"] = new Dictionary<string, object>
         {
@@ -211,24 +282,24 @@ static Dictionary<string, object> Paths()
     void Delete(string path, string summary) => Add(path, ("delete", summary, null));
 
     // UserService
-    Add("/api/User", ("get", "Get all users", null), ("post", "Register a new user", "#/components/schemas/RegisterRequest"));
+    Get("/api/User", "Get all users");
     Add("/api/User/{id}", ("get", "Get user by ID", null), ("delete", "Remove user", null));
     Post("/api/User/login-user", "Login (returns JWT token)", "#/components/schemas/LoginRequest");
     Post("/api/User/register", "Register", "#/components/schemas/RegisterRequest");
     Get("/api/User/user-personal-info/{id}", "Get user personal info");
-    Post("/api/User/add-passport/{userId}", "Add passport data", "#/components/schemas/PassportData");
+    Post("/api/User/add-passport/{userId}", "Add passport data", "#/components/schemas/PassportRequest");
     Put("/api/User/deactivate-user/{userId}", "Deactivate user");
     Put("/api/User/activate-user/{userId}", "Activate user");
     Delete("/api/User/remove-user/{userId}", "Remove user");
 
     // CarService
-    Add("/api/Car", ("get", "Get all cars", null), ("post", "Add a new car", "#/components/schemas/CarCreate"));
+    Get("/api/Car", "Get all cars");
     Get("/api/Car/available", "Get available cars (public)");
     Get("/api/Car/public-car/{carId}", "Get public detailed car info (no auth)");
     Get("/api/Car/my-rented", "Get my rented cars");
     Get("/api/Car/detailed-car/{carId}", "Get detailed car info");
-    Post("/api/Car/add-car", "Add a new car", "#/components/schemas/CarCreate");
-    Put("/api/Car/update-car/{id}", "Update car info", "#/components/schemas/CarUpdate");
+    Post("/api/Car/add-car", "Add a new car", "#/components/schemas/CreateCarRequest");
+    Put("/api/Car/update-car/{id}", "Update car info", "#/components/schemas/UpdateCarRequest");
     Delete("/api/Car/delete-car/{id}", "Delete car");
     Put("/api/Car/rent/{carId}", "Rent a car");
     Put("/api/Car/return/{carId}", "Return a car");
@@ -236,17 +307,17 @@ static Dictionary<string, object> Paths()
     Put("/api/Car/send-to-maintenance/{carId}", "Send car to maintenance");
     Put("/api/Car/send-to-repair/{carId}", "Send car to repair");
     Put("/api/Car/complete-maintenance/{carId}", "Complete maintenance");
-    Put("/api/Car/process-return/{carId}", "Process car return");
+    Put("/api/Car/process-return/{carId}", "Process car return", "#/components/schemas/ProcessReturnRequest");
     Put("/api/Car/mark-returned/{carId}", "Mark car as returned");
 
     // RentalService
     Get("/api/Rental/GetRentals", "Get all rentals");
     Get("/api/Rental/GetRental/{id}", "Get rental by ID");
-    Post("/api/Rental/CalculateEstimatedCost/{id}", "Calculate estimated cost");
+    Post("/api/Rental/CalculateEstimatedCost/{id}", "Calculate estimated cost", "#/components/schemas/GetEstimatedRentalPriceRequest");
     Post("/api/Rental/CreateRental", "Create a new rental", "#/components/schemas/CreateRentalRequest");
-    Put("/api/Rental/RenewRental/{id}", "Renew rental", "#/components/schemas/ExtendRentalRequest");
-    Put("/api/Rental/EndRental/{id}", "End rental");
-    Put("/api/Rental/CancelRental/{id}", "Cancel rental");
+    Put("/api/Rental/RenewRental/{id}", "Renew rental", "#/components/schemas/RenewRentalRequest");
+    Put("/api/Rental/EndRental/{id}", "End rental", "#/components/schemas/EndRentalRequest");
+    Put("/api/Rental/CancelRental/{id}", "Cancel rental", "#/components/schemas/CancelRentalRequest");
 
     // ContractService
     Get("/api/Contract/get-contracts", "Get all contracts");
@@ -254,7 +325,7 @@ static Dictionary<string, object> Paths()
     Get("/api/Contract/get-contract-{id}/pdf", "Download contract PDF");
     Post("/api/Contract/create-contract", "Create a new contract", "#/components/schemas/CreateContractRequest");
     Put("/api/Contract/sign-contract", "Sign a contract", "#/components/schemas/SignContractRequest");
-    Put("/api/Contract/cancel-contract", "Cancel a contract");
+    Put("/api/Contract/cancel-contract", "Cancel a contract", "#/components/schemas/CancelContractRequest");
     Put("/api/Contract/change-status", "Change contract status", "#/components/schemas/ChangeContractStatusRequest");
 
     // ContractTemplate
@@ -266,8 +337,8 @@ static Dictionary<string, object> Paths()
 
     // PaymentService
     Get("/api/Payments/methods", "Get payment methods");
-    Post("/api/Payments/pay/{rentalId}", "Process payment", "#/components/schemas/PaymentRequest");
-    Post("/api/Payments/refund/{rentalId}", "Process refund", "#/components/schemas/RefundRequest");
+    Post("/api/Payments/pay/{rentalId}", "Process payment");
+    Post("/api/Payments/refund/{rentalId}", "Process refund");
     Post("/api/Payments/webhook", "Payment webhook", "#/components/schemas/WebhookPayload");
 
     return p;
@@ -290,12 +361,36 @@ static Dictionary<string, object> Schema(params (string name, object prop)[] pro
     };
 }
 
-static Dictionary<string, object> Prop(string type, string? format = null, string? description = null, string[]? enumValues = null)
+static Dictionary<string, object> SchemaOptional(
+    (string name, object prop)[] required,
+    (string name, object prop)[] optional)
+{
+    var props = new Dictionary<string, object>();
+    var reqList = new List<string>();
+    foreach (var (name, prop) in required)
+    {
+        props[name] = prop;
+        reqList.Add(name);
+    }
+    foreach (var (name, prop) in optional)
+    {
+        props[name] = prop;
+    }
+    return new()
+    {
+        ["type"] = "object",
+        ["properties"] = props,
+        ["required"] = reqList.ToArray()
+    };
+}
+
+static Dictionary<string, object> Prop(string type, string? format = null, string? description = null, string[]? enumValues = null, bool nullable = false)
 {
     var p = new Dictionary<string, object> { ["type"] = type };
     if (format != null) p["format"] = format;
     if (description != null) p["description"] = description;
     if (enumValues != null) p["enum"] = enumValues;
+    if (nullable) p["nullable"] = true;
     return p;
 }
 

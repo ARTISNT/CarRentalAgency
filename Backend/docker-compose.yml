@@ -236,6 +236,7 @@ services:
 
       BePaid__ShopId: ${BEPAID_SHOP_ID:-4225}
       BePaid__SecretKey: ${BEPAID_SECRET_KEY:-3834fbef1fe6ea024ef77f5c79ec7ff1ba710ea6241c08c2f341afda8af4c1c4}
+      BePaid__CallbackUrl: ${BEPAID_CALLBACK_URL:-http://localhost:5173/payment/callback}
       BePaid__NotificationUrl: ${BEPAID_NOTIFICATION_URL:-https://your-ngrok-url.ngrok-free.dev/api/payments/webhook}
 
   gateway:
