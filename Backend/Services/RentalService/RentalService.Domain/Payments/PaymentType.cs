@@ -9,7 +9,9 @@ public class PaymentType : Enumeration
     public static readonly PaymentType Deposit = new PaymentType(3, "Deposit");
     public static readonly PaymentType Fine = new PaymentType(4, "Fine");
     public static readonly PaymentType Refund = new PaymentType(5, "Refund");
-    
+    public static readonly PaymentType Additional = new PaymentType(6, "Additional");
+    public static readonly PaymentType FineRefund = new PaymentType(7, "FineRefund");
+
     public PaymentType(int id, string name) : base(id, name)
     {
     }

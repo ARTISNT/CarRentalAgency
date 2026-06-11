@@ -1,3 +1,4 @@
+using Contracts.PaymentEvents;
 using Contracts.RentalEvents;
 using MediatR;
 using RentalService.Application.Authorization;
@@ -24,22 +25,34 @@ public class EndRentalCommandHandler(
         var rental = await rentalRepository.GetRentalAsync(request.Id, cancellationToken) ??
                      throw new KeyNotFoundException("Rental not found");
         var pricingPolicies = pricingPoliciesFactory.Create();
-        
+
         var payment = await paymentRepository.GetPaymentByRentIdAsync(rental.Id, cancellationToken);
-        
+
         rental.EndRental(request.ReturnDate);
-         
+
         var totalCost = rentalPricingDomainService.CalculateFinalCost(pricingPolicies,
             rental,
             request.ReturnDate,
             payment.EstimatedAmount.Currency);
-        
+
         payment.FinalizeAmount(totalCost);
-        
+
         if (payment.Overpayment.Amount > 0)
         {
             payment.Refund(payment.Overpayment,
                 "Early return");
+        }
+
+        if (request.PenaltyAmount > 0)
+        {
+            var fine = new Money(
+                request.PenaltyAmount,
+                payment.RequiredAmount.Currency);
+            payment.AddFine(
+                fine,
+                string.IsNullOrWhiteSpace(request.DamageDescription)
+                    ? "Penalty"
+                    : request.DamageDescription);
         }
 
         await rentalRepository.UpdateRentalAsync(rental, cancellationToken);
@@ -47,7 +60,8 @@ public class EndRentalCommandHandler(
 
         var integrationEvent = new RentalEndedIntegrationEvent(
             rental.Id,
-            rental.RentCarId,
+            rental.CarRenterId,
+            rental.CarRenterSnapshot.Email,
             request.ReturnDate,
             payment.RequiredAmount.Amount,
             request.Mileage,
@@ -55,5 +69,16 @@ public class EndRentalCommandHandler(
             request.PenaltyAmount,
             request.DamageDescription);
         await publisher.Publish(integrationEvent, cancellationToken);
+
+        if (request.PenaltyAmount > 0)
+        {
+            await publisher.Publish(new FineChargedIntegrationEvent(
+                rental.Id,
+                request.PenaltyAmount,
+                string.IsNullOrWhiteSpace(request.DamageDescription)
+                    ? "Penalty"
+                    : request.DamageDescription!,
+                DateTime.UtcNow), cancellationToken);
+        }
     }
 }

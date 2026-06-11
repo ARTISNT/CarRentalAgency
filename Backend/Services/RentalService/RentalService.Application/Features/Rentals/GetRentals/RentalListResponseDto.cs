@@ -10,6 +10,10 @@ public class RentalListResponseDto
 
     public string Renter { get; set; } = null!;
 
+    public Guid RenterId { get; set; }
+
+    public string PhoneNumber { get; set; } = null!;
+
     public DateTime StartDate { get; set; }
 
     public DateTime EndDate { get; set; }

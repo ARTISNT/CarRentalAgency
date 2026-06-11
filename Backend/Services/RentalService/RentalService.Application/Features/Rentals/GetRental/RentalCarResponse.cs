@@ -2,6 +2,8 @@ namespace RentalService.Application.Features.Rentals.GetRental;
 
 public class RentalCarResponse
 {
+    public Guid Id { get; set; }
+
     public string Model { get; set; } = null!;
 
     public string Brand { get; set; } = null!;

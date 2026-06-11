@@ -24,7 +24,9 @@ public class RentalProfile : Profile
             
             .ForMember(
                 dest => dest.TotalCost,
-                opt => opt.Ignore());
+                opt => opt.Ignore())
+            
+            .AfterMap((src, dest) => dest.Car.Id = src.RentCarId);
 
         CreateMap<Rental, RentalListResponseDto>()
             .ForMember(
@@ -35,6 +37,14 @@ public class RentalProfile : Profile
             .ForMember(
                 dest => dest.Renter,
                 opt => opt.MapFrom(src =>
-                    $"{src.CarRenterSnapshot.SurName} {src.CarRenterSnapshot.Name}"));
+                    $"{src.CarRenterSnapshot.SurName} {src.CarRenterSnapshot.Name}"))
+
+            .ForMember(
+                dest => dest.RenterId,
+                opt => opt.MapFrom(src => src.CarRenterId))
+
+            .ForMember(
+                dest => dest.PhoneNumber,
+                opt => opt.MapFrom(src => src.CarRenterSnapshot.PhoneNumber));
     }
 }

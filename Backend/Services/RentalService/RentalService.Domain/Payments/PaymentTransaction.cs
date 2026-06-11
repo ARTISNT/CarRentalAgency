@@ -15,6 +15,8 @@ public class PaymentTransaction : Entity
 
     public string? FailureReason { get; private set; }
 
+    public string? Description { get; private set; }
+
     public DateTime CreatedAtUtc { get; private set; }
 
     public DateTime? CompletedAtUtc { get; private set; }
@@ -25,7 +27,8 @@ public class PaymentTransaction : Entity
         Money amount,
         PaymentType type,
         PaymentMethod method,
-        string externalTransactionId)
+        string externalTransactionId,
+        string? description = null)
     {
         Amount = amount;
         Type = type;
@@ -34,6 +37,8 @@ public class PaymentTransaction : Entity
         ExternalTransactionId = externalTransactionId;
 
         Status = TransactionStatus.Pending;
+
+        Description = description;
 
         CreatedAtUtc = DateTime.UtcNow;
     }

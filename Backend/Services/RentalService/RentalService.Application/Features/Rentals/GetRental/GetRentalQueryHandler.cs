@@ -1,6 +1,7 @@
 using AutoMapper;
 using MediatR;
 using RentalService.Application.Authorization;
+using RentalService.Domain.Payments;
 using RentalService.Domain.Rentals;
 
 namespace RentalService.Application.Features.Rentals.GetRental;
@@ -8,7 +9,8 @@ namespace RentalService.Application.Features.Rentals.GetRental;
 public class GetRentalQueryHandler(
     IRentalRepository rentalRepository,
     IMapper mapper,
-    IRentalAuthorizationService authorizationService) : IRequestHandler<GetRentalQuery, RentalResponse>
+    IRentalAuthorizationService authorizationService,
+    IPaymentRepository paymentRepository) : IRequestHandler<GetRentalQuery, RentalResponse>
 {
     public async Task<RentalResponse> Handle(GetRentalQuery request, CancellationToken cancellationToken)
     {
@@ -17,6 +19,17 @@ public class GetRentalQueryHandler(
 
         authorizationService.EnsureCanViewRentals(rental.CarRenterId);
         
-        return mapper.Map<RentalResponse>(rental);
+        var response = mapper.Map<RentalResponse>(rental);
+        var payment = await paymentRepository.GetPaymentByRentIdAsync(rental.Id, cancellationToken);
+        if (payment != null)
+        {
+            response.TotalCost = payment.EstimatedAmount.Amount;
+            response.DepositAmount = payment.DepositAmount.Amount;
+            response.PaidAmount = payment.PaidAmount.Amount;
+            response.RequiredAmount = payment.RequiredAmount.Amount;
+            response.RemainingAmount = payment.RemainingAmount.Amount;
+            response.PaymentStatus = payment.Status.Name;
+        }
+        return response;
     }
 }

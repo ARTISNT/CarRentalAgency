@@ -2,6 +2,7 @@ using AutoMapper;
 using MediatR;
 using RentalService.Application.Abstractions.Security;
 using RentalService.Application.Authorization;
+using RentalService.Domain.Payments;
 using RentalService.Domain.Rentals;
 
 namespace RentalService.Application.Features.Rentals.GetRentals;
@@ -10,7 +11,8 @@ public class GetRentalsQueryHandler(
     IRentalRepository rentalRepository,
     IMapper mapper,
     IClientContext clientContext,
-    IRentalAuthorizationPolicy authorizationPolicy) : IRequestHandler<GetRentalsQuery, IReadOnlyCollection<RentalListResponseDto>>
+    IRentalAuthorizationPolicy authorizationPolicy,
+    IPaymentRepository paymentRepository) : IRequestHandler<GetRentalsQuery, IReadOnlyCollection<RentalListResponseDto>>
 {
     public async Task<IReadOnlyCollection<RentalListResponseDto>> Handle(GetRentalsQuery request, CancellationToken cancellationToken)
     {
@@ -19,6 +21,14 @@ public class GetRentalsQueryHandler(
 
         var rentals = await rentalRepository.GetRentalsAsync(request.RentalSpecification, cancellationToken);
 
-        return mapper.Map<IReadOnlyCollection<RentalListResponseDto>>(rentals);
+        var responses = mapper.Map<IReadOnlyCollection<RentalListResponseDto>>(rentals);
+
+        var rentalIds = rentals.Select(r => r.Id).ToList();
+        var payments = await paymentRepository.GetPaymentsByRentIdsAsync(rentalIds, cancellationToken);
+        foreach (var dto in responses)
+            if (payments.TryGetValue(dto.Id, out var payment))
+                dto.TotalCost = payment.EstimatedAmount.Amount;
+
+        return responses;
     }
 }

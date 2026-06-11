@@ -74,6 +74,29 @@ public class Payment : Entity, IAggregateRoot
     public bool IsFullyPaid =>
         RemainingAmount.Amount <= 0;
 
+    public Money FineOutstanding =>
+        new(
+            _transactions
+                .Where(x => x.Type == PaymentType.Fine
+                    && x.Status != TransactionStatus.Failed
+                    && x.Status != TransactionStatus.Completed
+                    && x.ExternalTransactionId.StartsWith("fine-"))
+                .Sum(x => x.Amount.Amount),
+            EstimatedAmount.Currency);
+
+    public Money AdditionalOutstanding =>
+        new(
+            _transactions
+                .Where(x => x.Type == PaymentType.Additional
+                    && x.Status != TransactionStatus.Failed
+                    && x.Status != TransactionStatus.Completed
+                    && x.ExternalTransactionId.StartsWith("renewal-"))
+                .Sum(x => x.Amount.Amount),
+            EstimatedAmount.Currency);
+
+    public bool HasOutstandingFines =>
+        FineOutstanding.Amount > 0;
+
     public void FinalizeAmount(Money finalAmount)
     {
         if (finalAmount.Amount <= 0)
@@ -186,7 +209,7 @@ public class Payment : Entity, IAggregateRoot
                 "Refund amount invalid");
 
         EnsureSameCurrency(amount);
-        
+
         if (amount.Amount > PaidAmount.Amount)
             throw new InvalidOperationException(
                 "Refund exceeds paid amount");
@@ -210,6 +233,100 @@ public class Payment : Entity, IAggregateRoot
         //         amount.Amount,
         //         reason,
         //         DateTime.UtcNow));
+    }
+
+    public Guid AddFine(
+        Money amount,
+        string reason)
+    {
+        if (amount.Amount <= 0)
+            throw new ArgumentException("Fine amount must be positive");
+
+        EnsureSameCurrency(amount);
+
+        var baseCost = FinalAmount ?? EstimatedAmount;
+        var newFinalAmount = new Money(
+            baseCost.Amount + amount.Amount,
+            baseCost.Currency);
+
+        if (FinalAmount is null)
+        {
+            FinalizeAmount(newFinalAmount);
+        }
+        else
+        {
+            FinalAmount = newFinalAmount;
+            RecalculateStatus();
+        }
+
+        var transaction = new PaymentTransaction(
+            amount,
+            PaymentType.Fine,
+            PaymentMethod.System,
+            $"fine-{Guid.NewGuid()}",
+            reason);
+
+        _transactions.Add(transaction);
+
+        RecalculateStatus();
+
+        return transaction.Id;
+    }
+
+    public Guid AddAdditional(
+        Money amount,
+        string reason)
+    {
+        if (amount.Amount <= 0)
+            throw new ArgumentException("Additional amount must be positive");
+
+        EnsureSameCurrency(amount);
+
+        var baseCost = FinalAmount ?? EstimatedAmount;
+        var newFinalAmount = new Money(
+            baseCost.Amount + amount.Amount,
+            baseCost.Currency);
+
+        if (FinalAmount is null)
+        {
+            FinalizeAmount(newFinalAmount);
+        }
+        else
+        {
+            FinalAmount = newFinalAmount;
+            RecalculateStatus();
+        }
+
+        var transaction = new PaymentTransaction(
+            amount,
+            PaymentType.Additional,
+            PaymentMethod.System,
+            $"renewal-{Guid.NewGuid()}",
+            reason);
+
+        _transactions.Add(transaction);
+
+        RecalculateStatus();
+
+        return transaction.Id;
+    }
+
+    public void MarkTransactionCompleted(
+        string externalTransactionId,
+        DateTime completedAtUtc)
+    {
+        var transaction = _transactions
+            .FirstOrDefault(x => x.ExternalTransactionId == externalTransactionId
+                && x.Status != TransactionStatus.Completed);
+
+        if (transaction is null)
+            return;
+
+        if (transaction.Status == TransactionStatus.Failed)
+            return;
+
+        transaction.MarkCompleted();
+        RecalculateStatus();
     }
 
     private PaymentTransaction GetTransaction(Guid transactionId)

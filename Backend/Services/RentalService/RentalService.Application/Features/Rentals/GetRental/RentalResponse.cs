@@ -14,6 +14,12 @@ public class RentalResponse
 
     public decimal TotalCost { get; set; }
 
+    public decimal DepositAmount { get; set; }
+    public decimal PaidAmount { get; set; }
+    public decimal RequiredAmount { get; set; }
+    public decimal RemainingAmount { get; set; }
+    public string PaymentStatus { get; set; } = string.Empty;
+
     public RentalCarResponse Car { get; set; } = null!;
 
     public RentalRenterResponse Renter { get; set; } = null!; 

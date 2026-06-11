@@ -20,6 +20,9 @@ public class PaymentTransactionConfiguration
         builder.Property(x => x.FailureReason)
             .HasMaxLength(500);
 
+        builder.Property(x => x.Description)
+            .HasMaxLength(500);
+
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 

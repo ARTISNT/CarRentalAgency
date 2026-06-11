@@ -63,6 +63,7 @@ public class CreateRentalCommandHandler(
         var integrationEvent = new RentalCreatedIntegrationEvent(
             rental.Id,
             request.UserId,
+            user.Email,
             request.CarId,
             rental.StartDate,
             rental.EndDate,

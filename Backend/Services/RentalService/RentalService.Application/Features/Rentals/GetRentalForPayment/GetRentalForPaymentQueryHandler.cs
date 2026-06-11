@@ -20,6 +20,21 @@ public class GetRentalForPaymentQueryHandler(
         var userSnapshot = rental.CarRenterSnapshot;
         var carSnapshot = rental.RentCarSnapshot;
 
+        var transactions = payment.Transactions
+            .Select(t => new PaymentTransactionDto
+            {
+                Id = t.Id,
+                Amount = t.Amount.Amount,
+                Type = t.Type.Name,
+                Method = t.Method.Name,
+                Status = t.Status.Name,
+                ExternalTransactionId = t.ExternalTransactionId,
+                Description = t.Description,
+                CreatedAt = t.CreatedAtUtc,
+                CompletedAt = t.CompletedAtUtc
+            })
+            .ToList();
+
         return new RentalForPaymentResponse
         {
             RentalId = rental.Id,
@@ -28,8 +43,15 @@ public class GetRentalForPaymentQueryHandler(
             CarName = $"{carSnapshot.Brand} {carSnapshot.Model}",
             StartDate = rental.StartDate,
             EndDate = rental.EndDate,
-            TotalPrice = payment.EstimatedAmount.Amount,
-            DepositAmount = payment.DepositAmount.Amount
+            TotalPrice = payment.RequiredAmount.Amount,
+            DepositAmount = payment.DepositAmount.Amount,
+            PaidAmount = payment.PaidAmount.Amount,
+            RequiredAmount = payment.RequiredAmount.Amount,
+            RemainingAmount = payment.RemainingAmount.Amount,
+            FineOutstanding = payment.FineOutstanding.Amount,
+            AdditionalOutstanding = payment.AdditionalOutstanding.Amount,
+            PaymentStatus = payment.Status.Name,
+            Transactions = transactions
         };
     }
 }
