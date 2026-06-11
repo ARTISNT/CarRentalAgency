@@ -6,4 +6,6 @@ public interface IRentalRepository
     public Task<Rental?> GetRentalAsync(Guid rentalId, CancellationToken cancellationToken = default);
     public Task AddRentalAsync(Rental rental,  CancellationToken cancellationToken = default);
     public Task UpdateRentalAsync(Rental rental, CancellationToken cancellationToken = default);
+    public Task<IReadOnlyCollection<Rental>> GetScheduledReadyRentalsAsync(CancellationToken cancellationToken = default);
+    public Task<IReadOnlyCollection<Rental>> GetExpiredAwaitingConfirmationRentalsAsync(CancellationToken cancellationToken = default);
 }

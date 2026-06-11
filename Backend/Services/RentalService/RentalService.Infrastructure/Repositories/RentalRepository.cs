@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RentalService.Domain.Rentals;
+using RentalService.Domain.Rentals.Enums;
 using RentalService.Infrastructure.Extensions;
 
 namespace RentalService.Infrastructure.Repositories;
@@ -24,7 +25,21 @@ public class RentalRepository(RentalServiceContext dbContext) : IRentalRepositor
 
     public async Task UpdateRentalAsync(Rental rental, CancellationToken cancellationToken = default)
     {
-        dbContext.Rentals.Update(rental);
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<Rental>> GetScheduledReadyRentalsAsync(CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Rentals
+            .Where(r => r.ActivityStatus == RentActivityStatus.Scheduled && r.StartDate <= DateTime.UtcNow)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<Rental>> GetExpiredAwaitingConfirmationRentalsAsync(CancellationToken cancellationToken = default)
+    {
+        var expirationThreshold = DateTime.UtcNow.AddMinutes(-30);
+        return await dbContext.Rentals
+            .Where(r => r.ActivityStatus == RentActivityStatus.AwaitingConfirmation && r.CreatedAtUtc <= expirationThreshold)
+            .ToListAsync(cancellationToken);
     }
 }

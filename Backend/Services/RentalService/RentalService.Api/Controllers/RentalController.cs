@@ -50,9 +50,9 @@ public class RentalController(ISender sender) : ControllerBase
     [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.CreateRent)]
     public async Task<IActionResult> CreateRental([FromBody]CreateRentalRequest request)
     {
-        await sender.Send(new CreateRentalCommand(request.UserId, request.CarId, 
+        var rentalId = await sender.Send(new CreateRentalCommand(request.UserId, request.CarId, 
             request.StartDate, request.EndDate, request.PromoCode));
-        return Ok();
+        return Ok(new { rentalId });
     }
 
     [HttpPut]

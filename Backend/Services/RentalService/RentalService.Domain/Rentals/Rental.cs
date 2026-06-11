@@ -15,6 +15,7 @@ public class Rental : Entity, IAggregateRoot
     public DateTime? ReturnDate { get; private set; }
     public DateTime? ContractSignedAt { get; private set; }
     public DateTime? DepositPaidAt { get; private set; }
+    public DateTime CreatedAtUtc { get; private set; }
     public string? PromoCode { get; private set; }
     public RentCarSnapshot RentCarSnapshot { get; }
     public CarRenterSnapshot CarRenterSnapshot { get; }
@@ -53,11 +54,15 @@ public class Rental : Entity, IAggregateRoot
         RentCarId = rentCarId;
         
         ActivityStatus = RentActivityStatus.AwaitingConfirmation;
+        CreatedAtUtc = DateTime.UtcNow;
         AddDomainEvent(new RentCreatedDomainEvent(Id, DateTime.UtcNow));
     }
 
     public void MarkContractSigned(DateTime signedAt)
     {
+        if (ContractSignedAt.HasValue)
+            return;
+
         if (ActivityStatus != RentActivityStatus.AwaitingConfirmation)
             throw new InvalidOperationException("Cannot mark contract as signed");
 
@@ -66,6 +71,9 @@ public class Rental : Entity, IAggregateRoot
 
     public void MarkDepositPaid(DateTime paidAt)
     {
+        if (DepositPaidAt.HasValue)
+            return;
+
         if (ActivityStatus != RentActivityStatus.AwaitingConfirmation)
             throw new InvalidOperationException("Cannot mark deposit as paid");
 
@@ -85,6 +93,23 @@ public class Rental : Entity, IAggregateRoot
 
         if(!DepositPaidAt.HasValue)
             throw new InvalidOperationException("Deposit is not paid");
+
+        if (DateTime.UtcNow >= StartDate)
+        {
+            ActivityStatus = RentActivityStatus.Active;
+            AddDomainEvent(new RentStartedDomainEvent(Id, DateTime.UtcNow));
+        }
+        else
+        {
+            ActivityStatus = RentActivityStatus.Scheduled;
+            AddDomainEvent(new RentScheduledDomainEvent(Id, StartDate, DateTime.UtcNow));
+        }
+    }
+
+    public void ActivateScheduledRental()
+    {
+        if (ActivityStatus != RentActivityStatus.Scheduled)
+            throw new InvalidOperationException("Only scheduled rental can be activated");
 
         ActivityStatus = RentActivityStatus.Active;
         AddDomainEvent(new RentStartedDomainEvent(Id, DateTime.UtcNow));
@@ -122,26 +147,27 @@ public class Rental : Entity, IAggregateRoot
     }
     
 
-    public void CancelRental(DateTime cancelledAt)
+    public void CancelRental(DateTime cancelledAt, string? reason = null)
     {
         if (ActivityStatus != RentActivityStatus.Active && 
-            ActivityStatus != RentActivityStatus.AwaitingConfirmation)
+            ActivityStatus != RentActivityStatus.AwaitingConfirmation &&
+            ActivityStatus != RentActivityStatus.Scheduled)
         {
             throw new InvalidOperationException("Cannot cancel rental");
         }
         
-        if (DateTime.UtcNow >= StartDate)
+        if (ActivityStatus != RentActivityStatus.AwaitingConfirmation && DateTime.UtcNow >= StartDate)
             throw new InvalidOperationException(
                 "Cannot cancel rental after it has started");
 
-        if (cancelledAt > StartDate)
+        if (ActivityStatus != RentActivityStatus.AwaitingConfirmation && cancelledAt > StartDate)
             throw new ArgumentException(
                 "Cancellation date cannot be greater than rental start date");
 
         ActivityStatus = RentActivityStatus.Cancelled;
 
         AddDomainEvent(
-            new RentCancelledDomainEvent(Id, cancelledAt, DateTime.UtcNow));
+            new RentCancelledDomainEvent(Id, cancelledAt, DateTime.UtcNow, reason));
     }    
     
     public void AttachPayment(Guid paymentId)

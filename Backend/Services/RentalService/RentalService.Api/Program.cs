@@ -2,17 +2,20 @@ using System.Text;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using RentalService.Api.BackgroundServices;
 using RentalService.Api.OpenApiConfiguration;
 using RentalService.Api.Requests;
 using RentalService.Application.Abstractions.Security;
 using RentalService.Application.Authorization;
 using RentalService.Application.Common;
 using RentalService.Application.Exceptions;
+using RentalService.Application.Features.Rentals.CancelRental;
 using RentalService.Application.Features.Rentals.CreateRental;
 using RentalService.Application.Features.Rentals.EndRental;
 using RentalService.Application.Features.Rentals.GetRental;
 using RentalService.Application.Features.Rentals.GetRentals;
 using RentalService.Application.Features.Rentals.RenewRental;
+using RentalService.Application.Features.Rentals.ScheduleRental;
 using RentalService.Application.Features.Rentals.StartRental;
 using RentalService.Domain.DomainEvents;
 using RentalService.Domain.Payments;
@@ -59,6 +62,8 @@ builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<RentalPricingDomainService>();
 builder.Services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 builder.Services.AddScoped<IDomainEventHandler<RentStartedDomainEvent>, RentStartedDomainEventHandler>();
+builder.Services.AddScoped<IDomainEventHandler<RentScheduledDomainEvent>, RentScheduledDomainEventHandler>();
+builder.Services.AddScoped<IDomainEventHandler<RentCancelledDomainEvent>, RentCancelledDomainEventHandler>();
 builder.Services.AddScoped<IJwtProvider, InternalJwtProvider>();
 
 builder.Services.AddHttpClient("UserApi", client =>
@@ -130,23 +135,56 @@ builder.Services.AddMassTransit(busConfigurator =>
     busConfigurator.AddConsumer<ContractEndedConsumer>();
     busConfigurator.AddConsumer<ContractSignedConsumer>();
     busConfigurator.AddConsumer<DepositPaidConsumer>();
+    busConfigurator.AddConsumer<ContractCreationFaultConsumer>();
 
     busConfigurator.UsingRabbitMq((context, configurator)=>
     {
         string host = builder.Configuration["MessageBroker:Host"] ?? "localhost";
-        ushort port = builder.Configuration.GetValue<ushort>("MessageBroker:Port", 5672); 
-        
+        ushort port = builder.Configuration.GetValue<ushort>("MessageBroker:Port", 5672);
+
+
         configurator.Host(host, port, "/", h =>
         {
             h.Username(builder.Configuration["MessageBroker:User"]);
             h.Password(builder.Configuration["MessageBroker:Password"]);
         });
 
+        configurator.UseMessageRetry(r => r
+            .Exponential(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(3))
+            .Handle<Exception>(ex => ex is not InvalidOperationException or KeyNotFoundException));
+
+        configurator.ReceiveEndpoint("rental-service-contract-signed", e =>
+        {
+            e.ConfigureConsumer<ContractSignedConsumer>(context);
+        });
+        configurator.ReceiveEndpoint("rental-service-deposit-paid", e =>
+        {
+            e.ConfigureConsumer<DepositPaidConsumer>(context);
+        });
+        configurator.ReceiveEndpoint("rental-service-contract-ended", e =>
+        {
+            e.ConfigureConsumer<ContractEndedConsumer>(context);
+        });
+        configurator.ReceiveEndpoint("rental-service-contract-creation-fault", e =>
+        {
+            e.ConfigureConsumer<ContractCreationFaultConsumer>(context);
+        });
+
         configurator.ConfigureEndpoints(context);
     });
 });
 
+builder.Services.AddHostedService<RentalActivationService>();
+builder.Services.AddHostedService<RentalExpirationService>();
+
 var app = builder.Build();
+
+// Apply pending EF Core migrations on startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<RentalServiceContext>();
+    await db.Database.MigrateAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
