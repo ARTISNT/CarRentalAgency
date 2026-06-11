@@ -24,6 +24,7 @@ public class Role : Enumeration
         [
             Permission.ViewUsers,
 
+            Permission.InteractWithContractTemplates,
             Permission.ViewCars,
             Permission.ViewAllCars,
             Permission.EditCarsDetails,

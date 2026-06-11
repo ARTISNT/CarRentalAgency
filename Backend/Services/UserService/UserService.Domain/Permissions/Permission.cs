@@ -39,6 +39,8 @@ public class Permission : Enumeration
     public static readonly Permission EditRent = new(24, "EditRent");
     public static readonly Permission DeleteRent = new(25, "DeleteRent");
     public static readonly Permission ChangeRentStatus = new(26, "ChangeRentStatus");
+    
+    public static readonly Permission InteractWithContractTemplates = new(27, "InteractWithContractTemplates");
 
     public Permission(int id, string name) : base(id, name) { }
 
