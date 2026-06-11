@@ -12,6 +12,7 @@ public class ContractEndedConsumer(INotificationSender sender) : IConsumer<Contr
         var msg = context.Message;
         await sender.SendAsync(
             msg.ClientId,
+            null,
             NotificationType.ContractEnded,
             $"Contract {msg.ContractId}: ended on {msg.EndedAt:yyyy-MM-dd}, car {msg.CarId}, mileage {msg.Mileage} km, fuel {msg.FuelLevel}%");
     }

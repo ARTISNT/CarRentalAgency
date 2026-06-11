@@ -12,6 +12,7 @@ public class RentalRenewedConsumer(INotificationSender sender) : IConsumer<Renta
         var msg = context.Message;
         await sender.SendAsync(
             msg.UserId,
+            msg.UserEmail,
             NotificationType.RentalRenewed,
             $"Rental {msg.Id}: renewed to {msg.NewEndDate:yyyy-MM-dd}, additional cost {msg.AdditionalPrice} BYN");
     }

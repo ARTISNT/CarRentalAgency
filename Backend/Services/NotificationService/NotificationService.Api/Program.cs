@@ -30,6 +30,30 @@ builder.Services.AddMassTransit(busConfigurator =>
             h.Password(builder.Configuration["MessageBroker:Password"]);
         });
 
+        configurator.ReceiveEndpoint("notification-service-contract-signed", e =>
+        {
+            e.ConfigureConsumer<ContractSignedConsumer>(context);
+        });
+        configurator.ReceiveEndpoint("notification-service-contract-created", e =>
+        {
+            e.ConfigureConsumer<ContractCreatedConsumer>(context);
+        });
+        configurator.ReceiveEndpoint("notification-service-contract-ended", e =>
+        {
+            e.ConfigureConsumer<ContractEndedConsumer>(context);
+        });
+        configurator.ReceiveEndpoint("notification-service-rental-created", e =>
+        {
+            e.ConfigureConsumer<RentalCreatedConsumer>(context);
+        });
+        configurator.ReceiveEndpoint("notification-service-rental-ended", e =>
+        {
+            e.ConfigureConsumer<RentalEndedConsumer>(context);
+        });
+        configurator.ReceiveEndpoint("notification-service-rental-renewed", e =>
+        {
+            e.ConfigureConsumer<RentalRenewedConsumer>(context);
+        });
         configurator.ConfigureEndpoints(context);
     });
 });

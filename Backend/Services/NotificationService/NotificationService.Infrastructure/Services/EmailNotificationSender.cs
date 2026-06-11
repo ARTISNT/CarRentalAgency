@@ -11,9 +11,11 @@ public class EmailNotificationSender(
     IOptions<SmtpSettings> smtpOptions,
     ILogger<EmailNotificationSender> logger) : INotificationSender
 {
-    public async Task SendAsync(Guid userId, NotificationType type, string message, CancellationToken cancellationToken = default)
+    public async Task SendAsync(Guid userId, string? email, NotificationType type, string message, CancellationToken cancellationToken = default)
     {
         var settings = smtpOptions.Value;
+
+        var toAddress = !string.IsNullOrWhiteSpace(email) ? email : settings.ToAddress;
 
         var subject = type switch
         {
@@ -36,7 +38,7 @@ public class EmailNotificationSender(
 
         var mailMessage = new MimeMessage();
         mailMessage.From.Add(new MailboxAddress(settings.FromName, settings.FromAddress));
-        mailMessage.To.Add(new MailboxAddress("", settings.ToAddress));
+        mailMessage.To.Add(new MailboxAddress("", toAddress));
         mailMessage.Subject = subject;
         mailMessage.Body = new TextPart("html") { Text = body };
 
@@ -54,13 +56,13 @@ public class EmailNotificationSender(
 
             logger.LogInformation(
                 "Email sent: To={ToAddress}, Subject={Subject}, UserId={UserId}, Type={Type}",
-                settings.ToAddress, subject, userId, type);
+                toAddress, subject, userId, type);
         }
         catch (Exception ex)
         {
             logger.LogError(ex,
                 "Failed to send email: To={ToAddress}, Subject={Subject}, UserId={UserId}, Type={Type}",
-                settings.ToAddress, subject, userId, type);
+                toAddress, subject, userId, type);
             throw;
         }
     }

@@ -4,5 +4,5 @@ namespace NotificationService.Application.Abstractions;
 
 public interface INotificationSender
 {
-    Task SendAsync(Guid userId, NotificationType type, string message, CancellationToken cancellationToken = default);
+    Task SendAsync(Guid userId, string? email, NotificationType type, string message, CancellationToken cancellationToken = default);
 }

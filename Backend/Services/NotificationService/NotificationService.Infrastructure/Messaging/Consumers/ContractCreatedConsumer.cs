@@ -12,6 +12,7 @@ public class ContractCreatedConsumer(INotificationSender sender) : IConsumer<Con
         var msg = context.Message;
         await sender.SendAsync(
             msg.ClientId,
+            null,
             NotificationType.ContractCreated,
             $"Contract {msg.ContractId}: created on {msg.CreatedAt:yyyy-MM-dd}, rental {msg.RentalId}");
     }

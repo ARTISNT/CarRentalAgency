@@ -12,6 +12,7 @@ public class RentalCreatedConsumer(INotificationSender sender) : IConsumer<Renta
         var msg = context.Message;
         await sender.SendAsync(
             msg.UserId,
+            msg.UserEmail,
             NotificationType.RentalCreated,
             $"Rental {msg.RentalId}: car {msg.CarId}, from {msg.StartDate:yyyy-MM-dd} to {msg.EndDate:yyyy-MM-dd}, estimated cost {msg.EstimatedCost} BYN");
     }

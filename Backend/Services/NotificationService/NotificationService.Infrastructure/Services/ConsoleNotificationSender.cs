@@ -6,11 +6,11 @@ namespace NotificationService.Infrastructure.Services;
 
 public class ConsoleNotificationSender(ILogger<ConsoleNotificationSender> logger) : INotificationSender
 {
-    public Task SendAsync(Guid userId, NotificationType type, string message, CancellationToken cancellationToken = default)
+    public Task SendAsync(Guid userId, string? email, NotificationType type, string message, CancellationToken cancellationToken = default)
     {
         logger.LogInformation(
-            "[NOTIFICATION] User: {UserId}, Type: {NotificationType}, Message: {Message}",
-            userId, type, message);
+            "[NOTIFICATION] User: {UserId}, Email: {Email}, Type: {NotificationType}, Message: {Message}",
+            userId, email, type, message);
         return Task.CompletedTask;
     }
 }

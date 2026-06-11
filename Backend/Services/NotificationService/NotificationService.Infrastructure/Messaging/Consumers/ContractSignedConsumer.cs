@@ -12,6 +12,7 @@ public class ContractSignedConsumer(INotificationSender sender) : IConsumer<Cont
         var msg = context.Message;
         await sender.SendAsync(
             msg.ClientId,
+            null,
             NotificationType.ContractSigned,
             $"Contract {msg.ContractId}: signed on {msg.SignedAt:yyyy-MM-dd}");
     }
