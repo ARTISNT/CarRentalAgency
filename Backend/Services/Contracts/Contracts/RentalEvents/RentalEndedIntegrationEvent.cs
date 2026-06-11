@@ -3,6 +3,7 @@ namespace Contracts.RentalEvents;
 public record RentalEndedIntegrationEvent(
     Guid RentalId,
     Guid UserId,
+    string UserEmail,
     DateTime ReturnDate,
     decimal TotalCost,
     int Mileage = 0,

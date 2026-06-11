@@ -1,3 +1,3 @@
 namespace Contracts.RentalEvents;
 
-public record RentalRenewedIntegrationEvent(Guid Id, Guid UserId, DateTime NewEndDate, decimal AdditionalPrice);
+public record RentalRenewedIntegrationEvent(Guid Id, Guid UserId, string UserEmail, DateTime NewEndDate, decimal AdditionalPrice);
