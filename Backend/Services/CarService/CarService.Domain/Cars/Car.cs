@@ -80,12 +80,34 @@ public sealed class Car : Entity, IAggregateRoot
 
     public void Rent(Guid renterId)
     {
-        EnsureStatusIs(AvailabilityStatus.Available);
+        if (Status != AvailabilityStatus.Available && Status != AvailabilityStatus.Reserved)
+            throw new InvalidOperationException(
+                $"Car must be in 'Available' or 'Reserved' status, but current status is '{Status.Name}'");
 
         ChangeStatus(AvailabilityStatus.Rented);
         CurrentRenterId = renterId;
 
         AddDomainEvent(new CarRentedDomainEvent(Id, DateTime.UtcNow));
+    }
+
+    public void Reserve(Guid renterId)
+    {
+        EnsureStatusIs(AvailabilityStatus.Available);
+
+        ChangeStatus(AvailabilityStatus.Reserved);
+        CurrentRenterId = renterId;
+
+        AddDomainEvent(new CarReservedDomainEvent(Id, DateTime.UtcNow));
+    }
+
+    public void ReleaseReservation()
+    {
+        EnsureStatusIs(AvailabilityStatus.Reserved);
+
+        ChangeStatus(AvailabilityStatus.Available);
+        CurrentRenterId = null;
+
+        AddDomainEvent(new CarBecameAvailableDomainEvent(Id, DateTime.UtcNow));
     }
 
     public void Return()

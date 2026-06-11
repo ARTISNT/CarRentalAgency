@@ -29,7 +29,27 @@ public class CarResponseMappingProfile : Profile
             .ForMember(dest => dest.Variant,
                 opt => opt.MapFrom(src => src.ModelInfo.Variant))
             .ForMember(dest => dest.AvailabilityStatus,
-                opt => opt.MapFrom(src => src.Status.Name));
+                opt => opt.MapFrom(src => src.Status.Name))
+            .ForMember(dest => dest.LicensePlate,
+                opt => opt.MapFrom(src => src.LicensePlate.Value))
+            .ForMember(dest => dest.VinCode,
+                opt => opt.MapFrom(src => src.VinCode.Value))
+            .ForMember(dest => dest.Color,
+                opt => opt.MapFrom(src => src.Color.Value))
+            .ForMember(dest => dest.HorsePower,
+                opt => opt.MapFrom(src => src.TechInfo.EngineDetails.HorsePower))
+            .ForMember(dest => dest.EngineVolume,
+                opt => opt.MapFrom(src => src.TechInfo.EngineDetails.Volume))
+            .ForMember(dest => dest.PowerReverse,
+                opt => opt.MapFrom(src => src.TechInfo.EngineDetails.PowerReverse))
+            .ForMember(dest => dest.FuelCurrentLiters,
+                opt => opt.MapFrom(src => src.TechInfo.FuelTank != null ? (double?)src.TechInfo.FuelTank.CurrentLiters : null))
+            .ForMember(dest => dest.FuelCapacityLiters,
+                opt => opt.MapFrom(src => src.TechInfo.FuelTank != null ? (double?)src.TechInfo.FuelTank.CapacityLiters : null))
+            .ForMember(dest => dest.BatteryCurrentKWh,
+                opt => opt.MapFrom(src => src.TechInfo.BatteryLevel != null ? (double?)src.TechInfo.BatteryLevel.CurrentKWh : null))
+            .ForMember(dest => dest.BatteryCapacityKWh,
+                opt => opt.MapFrom(src => src.TechInfo.BatteryLevel != null ? (double?)src.TechInfo.BatteryLevel.CapacityKWh : null));
 
         CreateMap<Car, CarDetailsResponse>()
             .IncludeBase<Car, CarListResponse>()

@@ -11,7 +11,14 @@ public sealed class CarAvailabilityStateMachine
             {
                 AvailabilityStatus.Rented,
                 AvailabilityStatus.Maintenance,
-                AvailabilityStatus.Broken
+                AvailabilityStatus.Broken,
+                AvailabilityStatus.Reserved
+            },
+
+            [AvailabilityStatus.Reserved] = new()
+            {
+                AvailabilityStatus.Available,
+                AvailabilityStatus.Rented
             },
 
             [AvailabilityStatus.Rented] = new()

@@ -1,5 +1,6 @@
 using AutoMapper;
 using CarService.Api.Requests;
+using CarService.Application.Common;
 using CarService.Application.Features.AddCar;
 using CarService.Domain.Cars;
 using CarService.Application.Features.BreakCar;
@@ -95,7 +96,7 @@ public class CarController(ISender sender, IMapper mapper) : ControllerBase
 
     [HttpPut]
     [Route("rent/{carId}")]
-    [Authorize(AuthenticationSchemes = "UserAuth", Policy = "UpdateCars")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.UpdateCars)]
     public async Task<IActionResult> RentCar([FromRoute] Guid carId, CancellationToken cancellationToken)
     {
         await sender.Send(new RentCarCommand(carId), cancellationToken);
@@ -104,7 +105,7 @@ public class CarController(ISender sender, IMapper mapper) : ControllerBase
 
     [HttpPut]
     [Route("return/{carId}")]
-    [Authorize(AuthenticationSchemes = "UserAuth", Policy = "UpdateCars")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.UpdateCars)]
     public async Task<IActionResult> ReturnCar([FromRoute] Guid carId, CancellationToken cancellationToken)
     {
         await sender.Send(new ReturnCarCommand(carId), cancellationToken);
@@ -113,7 +114,7 @@ public class CarController(ISender sender, IMapper mapper) : ControllerBase
 
     [HttpPut]
     [Route("mark-returned/{carId}")]
-    [Authorize(AuthenticationSchemes = "UserAuth", Policy = "UpdateCars")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.UpdateCars)]
     public async Task<IActionResult> MarkCarAsReturned([FromRoute] Guid carId, CancellationToken cancellationToken)
     {
         await sender.Send(new MarkCarAsReturnedCommand(carId), cancellationToken);
@@ -122,7 +123,7 @@ public class CarController(ISender sender, IMapper mapper) : ControllerBase
 
     [HttpPut]
     [Route("break/{carId}")]
-    [Authorize(AuthenticationSchemes = "UserAuth", Policy = "UpdateCars")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.UpdateCars)]
     public async Task<IActionResult> BreakCar([FromRoute] Guid carId, CancellationToken cancellationToken)
     {
         await sender.Send(new BreakCarCommand(carId), cancellationToken);
@@ -131,7 +132,7 @@ public class CarController(ISender sender, IMapper mapper) : ControllerBase
 
     [HttpPut]
     [Route("send-to-maintenance/{carId}")]
-    [Authorize(AuthenticationSchemes = "UserAuth", Policy = "UpdateCars")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.UpdateCars)]
     public async Task<IActionResult> SendCarToMaintenance([FromRoute] Guid carId, CancellationToken cancellationToken)
     {
         await sender.Send(new SendCarToMaintenanceCommand(carId), cancellationToken);
@@ -140,7 +141,7 @@ public class CarController(ISender sender, IMapper mapper) : ControllerBase
 
     [HttpPut]
     [Route("send-to-repair/{carId}")]
-    [Authorize(AuthenticationSchemes = "UserAuth", Policy = "UpdateCars")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.UpdateCars)]
     public async Task<IActionResult> SendCarToRepair([FromRoute] Guid carId, CancellationToken cancellationToken)
     {
         await sender.Send(new SendCarToRepairCommand(carId), cancellationToken);
@@ -149,7 +150,7 @@ public class CarController(ISender sender, IMapper mapper) : ControllerBase
 
     [HttpPut]
     [Route("complete-maintenance/{carId}")]
-    [Authorize(AuthenticationSchemes = "UserAuth", Policy = "UpdateCars")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.UpdateCars)]
     public async Task<IActionResult> CompleteMaintenance([FromRoute] Guid carId, CancellationToken cancellationToken)
     {
         await sender.Send(new CompleteMaintenanceCommand(carId), cancellationToken);

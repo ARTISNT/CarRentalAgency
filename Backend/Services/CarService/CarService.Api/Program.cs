@@ -96,6 +96,8 @@ builder.Services.AddMassTransit(busConfigurator =>
     busConfigurator.SetKebabCaseEndpointNameFormatter();
     busConfigurator.AddConsumer<ContractEndedConsumer>();
     busConfigurator.AddConsumer<RentalStartedConsumer>();
+    busConfigurator.AddConsumer<RentalScheduledConsumer>();
+    busConfigurator.AddConsumer<RentalCancelledConsumer>();
 
     busConfigurator.UsingRabbitMq((context, configurator) =>
     {
@@ -108,23 +110,41 @@ builder.Services.AddMassTransit(busConfigurator =>
             h.Password(builder.Configuration["MessageBroker:Password"]);
         });
 
+        configurator.ReceiveEndpoint("car-service-contract-ended", e =>
+        {
+            e.ConfigureConsumer<ContractEndedConsumer>(context);
+        });
+        configurator.ReceiveEndpoint("car-service-rental-started", e =>
+        {
+            e.ConfigureConsumer<RentalStartedConsumer>(context);
+        });
+        configurator.ReceiveEndpoint("car-service-rental-scheduled", e =>
+        {
+            e.ConfigureConsumer<RentalScheduledConsumer>(context);
+        });
+        configurator.ReceiveEndpoint("car-service-rental-cancelled", e =>
+        {
+            e.ConfigureConsumer<RentalCancelledConsumer>(context);
+        });
+
         configurator.ConfigureEndpoints(context);
     });
 });
 
 var app = builder.Build();
 
+// Apply pending EF Core migrations on startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<CarServiceDbContext>();
+    await db.Database.MigrateAsync();
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
-}
-
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<CarServiceDbContext>();
-    db.Database.Migrate();
 }
 
 app.UseAuthentication();
