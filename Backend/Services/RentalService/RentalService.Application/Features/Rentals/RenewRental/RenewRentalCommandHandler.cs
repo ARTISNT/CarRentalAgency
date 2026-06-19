@@ -72,7 +72,7 @@ public class RenewRentalCommandHandler(
             additionalCost.Amount);
 
         await publisher.Publish(integrationEvent, cancellationToken);
-        await rentalRepository.UpdateRentalAsync(rental, cancellationToken);
         await paymentRepository.UpdatePaymentAsync(payment, cancellationToken);
+        await rentalRepository.UpdateRentalAsync(rental, cancellationToken);
     }
 }

@@ -11,6 +11,7 @@ namespace PaymentService.Application.Abstractions.Repositories
         Task<Transaction?> GetByExternalTokenAsync(string token);
         Task<Transaction?> GetByTrackingIdAsync(string trackingId);
         Task<Transaction?> GetByRentalIdAndTypeAsync(Guid rentalId, PaymentType paymentType);
+        Task<Transaction?> GetCompletedByRentalIdAndTypeAsync(Guid rentalId, PaymentType paymentType);
         Task<IReadOnlyList<Transaction>> GetAllByRentalIdAsync(Guid rentalId, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Transaction>> GetPendingByRentalIdAndTypesAsync(Guid rentalId, IEnumerable<PaymentType> paymentTypes, CancellationToken cancellationToken = default);
         Task UpdateAsync(Transaction transaction);

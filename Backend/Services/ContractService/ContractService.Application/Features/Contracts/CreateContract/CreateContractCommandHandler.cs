@@ -1,6 +1,7 @@
 using AutoMapper;
 using Contracts.ContractEvents;
 using ContractService.Application.Abstractions.External;
+using ContractService.Application.Abstractions.Services;
 using ContractService.Application.Exceptions.Contracts;
 using ContractService.Application.Options;
 using ContractService.Application.Services;
@@ -20,12 +21,14 @@ public class CreateContractCommandHandler(
     IOptions<DocumentTemplateOptions> options,
     IMapper mapper,
     ContractDocumentService contractDocumentService,
-    IPublishEndpoint publishEndpoint)
+    IPublishEndpoint publishEndpoint,
+    ITemplateRenderer templateRenderer,
+    ContractTemplateVariablesBuilder variablesBuilder)
     : IRequestHandler<CreateContractCommand>
 {
     public async Task Handle(CreateContractCommand request, CancellationToken cancellationToken)
     {
-        var contractTemplate = await contractTemplateRepository.GetContractTemplatesAsync(options.Value.ContractTemplateId, cancellationToken) 
+        var contractTemplate = await contractTemplateRepository.GetContractTemplatesAsync(options.Value.ContractTemplateId, cancellationToken)
                                ?? throw new ContractNotFoundException("Contract template not found");
 
         var carTask = carExternalService.GetCarForContractAsync(request.CarId, cancellationToken);
@@ -49,9 +52,13 @@ public class CreateContractCommandHandler(
             mapper.Map<RentalSnapshot>(rentalResponse));
 
         await contractRepository.AddContractAsync(contract, cancellationToken);
+
+        var variables = variablesBuilder.ForContract(contract);
+        var renderedContent = templateRenderer.Render(contractTemplate.Content, variables);
+
         await contractDocumentService.GenerateContract(
             request.ClientId,
-            contractTemplate.Content,
+            renderedContent,
             contract);
 
         var integrationEvent = new ContractCreatedIntegrationEvent(

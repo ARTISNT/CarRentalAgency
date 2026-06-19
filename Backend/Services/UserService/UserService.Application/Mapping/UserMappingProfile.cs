@@ -34,32 +34,32 @@ public class UserMappingProfile : Profile
 
         CreateMap<User, UserRentInfoResponse>()
             .ForMember(dest => dest.Name,
-                opt => opt.MapFrom(src => src.Passport.Name))
+                opt => opt.MapFrom(src => src.Passport != null ? src.Passport.Name : null))
             .ForMember(dest => dest.Email,
                 opt => opt.MapFrom(src => src.Email.Value))
             .ForMember(dest => dest.PhoneNumber,
                 opt => opt.MapFrom(src => src.PhoneNumber.Value))
             .ForMember(dest => dest.SurName,
-                opt => opt.MapFrom(src => src.Passport.Surname))
+                opt => opt.MapFrom(src => src.Passport != null ? src.Passport.Surname : null))
             .ForMember(dest => dest.Patronymic,
-                opt => opt.MapFrom(src => src.Passport.Patronymic));
+                opt => opt.MapFrom(src => src.Passport != null ? src.Passport.Patronymic : null));
 
         CreateMap<User, ClientForContractResponse>()
             .ForMember(dest => dest.Name,
-                opt => opt.MapFrom(src => src.Passport.Name))
+                opt => opt.MapFrom(src => src.Passport != null ? src.Passport.Name : null))
             .ForMember(dest => dest.PhoneNumber,
                 opt => opt.MapFrom(src => src.PhoneNumber.Value))
             .ForMember(dest => dest.Surname,
-                opt => opt.MapFrom(src => src.Passport.Surname))
+                opt => opt.MapFrom(src => src.Passport != null ? src.Passport.Surname : null))
             .ForMember(dest => dest.Patronymic,
-                opt => opt.MapFrom(src => src.Passport.Patronymic))
+                opt => opt.MapFrom(src => src.Passport != null ? src.Passport.Patronymic : null))
             .ForMember(dest => dest.PassportIdentificationNumber,
-                opt => opt.MapFrom(src => src.Passport.IdentityNumber))
+                opt => opt.MapFrom(src => src.Passport != null ? src.Passport.IdentityNumber : null))
             .ForMember(dest => dest.PassportIssueDate,
-                opt => opt.MapFrom(src => src.Passport.PassportIssueDate))
+                opt => opt.MapFrom(src => src.Passport != null ? src.Passport.PassportIssueDate : default))
             .ForMember(dest => dest.PassportNumber,
-                opt => opt.MapFrom(src => src.Passport.PassportNumber))
+                opt => opt.MapFrom(src => src.Passport != null ? src.Passport.PassportNumber : null))
             .ForMember(dest => dest.BirthDate,
-                opt=> opt.MapFrom(src => src.Passport.BirthDate));
+                opt=> opt.MapFrom(src => src.Passport != null ? src.Passport.BirthDate : default));
     }
 }

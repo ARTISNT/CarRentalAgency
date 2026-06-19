@@ -29,5 +29,16 @@ public class RentalAuthorizationPolicy(IClientContext clientContext) : IRentalAu
 
     public bool CanChangeRentStatus() => HasPermission(Permissions.ChangeRentStatus);
 
+    public bool CanRequestReturn(Guid ownerId)
+    {
+        if (ownerId != clientContext.ClientId)
+            return false;
+
+        if (HasPermission(Permissions.EditRent))
+            return false;
+
+        return HasPermission(Permissions.ViewRents);
+    }
+
     private bool HasPermission(string permission) => clientContext.Permissions.Contains(permission);
 }

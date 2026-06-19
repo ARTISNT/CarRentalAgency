@@ -9,7 +9,9 @@ using RentalService.Application.Features.Rentals.CreateRental;
 using RentalService.Application.Features.Rentals.EndRental;
 using RentalService.Application.Features.Rentals.GetRental;
 using RentalService.Application.Features.Rentals.GetRentals;
+using RentalService.Application.Features.Rentals.PreviewFinalCost;
 using RentalService.Application.Features.Rentals.RenewRental;
+using RentalService.Application.Features.Rentals.RequestReturnRental;
 using RentalService.Domain.Rentals;
 
 namespace RentalService.Api.Controllers;
@@ -25,6 +27,17 @@ public class RentalController(ISender sender) : ControllerBase
     {
         var rentals = await sender.Send(new GetRentalsQuery(specification));
         return Ok(rentals);
+    }
+
+    [HttpGet]
+    [Route("PreviewFinalCost/{id}")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.ViewRents)]
+    public async Task<IActionResult> PreviewFinalCost(
+        [FromRoute] Guid id,
+        [FromQuery] DateTime returnDate)
+    {
+        var result = await sender.Send(new PreviewFinalCostQuery(id, returnDate));
+        return Ok(result);
     }
     
     [HttpGet]
@@ -76,6 +89,15 @@ public class RentalController(ISender sender) : ControllerBase
             endRentalRequest.FuelLevel,
             endRentalRequest.PenaltyAmount,
             endRentalRequest.DamageDescription));
+        return Ok();
+    }
+
+    [HttpPost]
+    [Route("RequestReturn/{id}")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.ViewRents)]
+    public async Task<IActionResult> RequestReturn([FromRoute] Guid id)
+    {
+        await sender.Send(new RequestReturnCommand(id));
         return Ok();
     }
 

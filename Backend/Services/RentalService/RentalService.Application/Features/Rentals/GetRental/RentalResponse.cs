@@ -11,6 +11,7 @@ public class RentalResponse
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public DateTime? ReturnDate { get; set; }
+    public DateTime? ReturnRequestedAtUtc { get; set; }
 
     public decimal TotalCost { get; set; }
 

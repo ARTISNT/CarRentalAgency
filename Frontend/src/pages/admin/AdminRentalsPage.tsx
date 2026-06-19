@@ -18,7 +18,7 @@ import {
 } from 'antd';
 import type { TablePaginationConfig } from 'antd';
 import type { FilterValue, SorterResult } from 'antd/es/table/interface';
-import { CloseCircleOutlined, EyeOutlined, RollbackOutlined } from '@ant-design/icons';
+import { CloseCircleOutlined, EyeOutlined, RollbackOutlined, CarOutlined } from '@ant-design/icons';
 import { rentalApi, userApi } from '../../api/endpoints';
 import { useAuthStore } from '../../stores/authStore';
 import type { EndRentalRequest, RentalListItem, RentActivityStatus } from '../../types';
@@ -255,8 +255,18 @@ export default function AdminRentalsPage() {
       title: <Text style={{ color: '#888' }}>Статус</Text>,
       dataIndex: 'activityStatus',
       key: 'status',
-      render: (v: { name: string; id: number }) => (
-        <Tag style={{ backgroundColor: statusColors[v.name as RentActivityStatus], color: '#fff', border: 'none' }}>{statusLabels[v.name as RentActivityStatus]}</Tag>
+      render: (v: { name: string; id: number }, record: RentalListItem) => (
+        <Space size={4} wrap>
+          <Tag style={{ backgroundColor: statusColors[v.name as RentActivityStatus], color: '#fff', border: 'none' }}>{statusLabels[v.name as RentActivityStatus]}</Tag>
+          {record.returnRequestedAtUtc && (
+            <Tag
+              icon={<CarOutlined />}
+              style={{ backgroundColor: '#f97316', color: '#fff', border: 'none' }}
+            >
+              Заявка на возврат
+            </Tag>
+          )}
+        </Space>
       ),
     },
     {
@@ -284,7 +294,9 @@ export default function AdminRentalsPage() {
             <Button
               type="link"
               icon={<RollbackOutlined />}
-              style={{ color: '#22c55e' }}
+              style={{ color: record.returnRequestedAtUtc ? '#22c55e' : '#666' }}
+              disabled={!record.returnRequestedAtUtc}
+              title={!record.returnRequestedAtUtc ? 'Дождитесь заявки на возврат от клиента' : undefined}
               onClick={() => {
                 setEndRentalId(record.id);
                 endForm.resetFields();

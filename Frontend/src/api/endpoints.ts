@@ -28,6 +28,8 @@ import type {
   PaymentTransactionDto,
   PayFineRequest,
   PayAdditionalRequest,
+  PreviewFinalCostResponse,
+  TemplateVariable,
 } from '../types';
 
 // ========== Auth ==========
@@ -112,6 +114,11 @@ export const carApi = {
 
   processReturn: (carId: string) =>
     apiClient.put(`/Car/process-return/${carId}`).then((r) => r.data),
+
+  processReturnWithStatus: (carId: string, targetStatus: 'Available' | 'Maintenance' | 'Broken') =>
+    apiClient
+      .put(`/Car/process-return/${carId}`, { targetStatus })
+      .then((r) => r.data),
 };
 
 // ========== Rentals ==========
@@ -145,6 +152,16 @@ export const rentalApi = {
 
   end: (id: string, data: EndRentalRequest) =>
     apiClient.put(`/Rental/EndRental/${id}`, data).then((r) => r.data),
+
+  previewFinalCost: (id: string, returnDate: string) =>
+    apiClient
+      .get<PreviewFinalCostResponse>(
+        `/Rental/PreviewFinalCost/${id}?returnDate=${encodeURIComponent(returnDate)}`,
+      )
+      .then((r) => r.data),
+
+  requestReturn: (id: string) =>
+    apiClient.post(`/Rental/RequestReturn/${id}`).then((r) => r.data),
 
   cancel: (id: string, data?: CancelRentalRequest) =>
     apiClient.put(`/Rental/CancelRental/${id}`, data).then((r) => r.data),
@@ -199,6 +216,11 @@ export const templateApi = {
 
   deactivate: (id: string) =>
     apiClient.put(`/ContractTemplate/deactivate-${id}`).then((r) => r.data),
+
+  getVariables: (documentType: string) =>
+    apiClient
+      .get<TemplateVariable[]>(`/ContractTemplate/variables?documentType=${encodeURIComponent(documentType)}`)
+      .then((r) => r.data),
 };
 
 // ========== Payments ==========

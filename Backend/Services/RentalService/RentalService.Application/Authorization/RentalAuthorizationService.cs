@@ -39,4 +39,10 @@ public class RentalAuthorizationService(IRentalAuthorizationPolicy rentalAuthori
         if (!rentalAuthorizationPolicy.CanChangeRentStatus())
             throw new ForbiddenException("You do not have permission to change rental status");
     }
+
+    public void EnsureCanRequestReturn(Guid ownerId)
+    {
+        if (!rentalAuthorizationPolicy.CanRequestReturn(ownerId))
+            throw new ForbiddenException("You do not have permission to request return for this rental");
+    }
 }

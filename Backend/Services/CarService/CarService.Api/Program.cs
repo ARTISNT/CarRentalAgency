@@ -99,6 +99,7 @@ builder.Services.AddMassTransit(busConfigurator =>
     busConfigurator.AddConsumer<RentalStartedConsumer>();
     busConfigurator.AddConsumer<RentalScheduledConsumer>();
     busConfigurator.AddConsumer<RentalCancelledConsumer>();
+    busConfigurator.AddConsumer<RentalEndedConsumer>();
 
     busConfigurator.UsingRabbitMq((context, configurator) =>
     {
@@ -126,6 +127,10 @@ builder.Services.AddMassTransit(busConfigurator =>
         configurator.ReceiveEndpoint("car-service-rental-cancelled", e =>
         {
             e.ConfigureConsumer<RentalCancelledConsumer>(context);
+        });
+        configurator.ReceiveEndpoint("car-service-rental-ended", e =>
+        {
+            e.ConfigureConsumer<RentalEndedConsumer>(context);
         });
 
         configurator.ConfigureEndpoints(context);

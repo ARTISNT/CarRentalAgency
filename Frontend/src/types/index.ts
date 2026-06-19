@@ -45,7 +45,7 @@ export interface UserResponse {
 }
 
 export interface UserWithPassport extends UserResponse {
-  passport: PassportDto | null;
+  passportDto: PassportDto | null;
 }
 
 export interface PassportRequest {
@@ -181,6 +181,7 @@ export interface RentalResponse {
   activityStatus: { name: string; id: number };
   totalCost: number;
   returnDate: string | null;
+  returnRequestedAtUtc: string | null;
   depositAmount: number;
   paidAmount: number;
   requiredAmount: number;
@@ -201,6 +202,7 @@ export interface RentalListItem {
   activityStatus: { name: string; id: number };
   totalCost: number;
   returnDate: string | null;
+  returnRequestedAtUtc: string | null;
 }
 
 export interface CreateRentalRequest {
@@ -225,6 +227,20 @@ export interface EndRentalRequest {
 
 export interface CancelRentalRequest {
   reason: string | null;
+}
+
+export interface PreviewFinalCostResponse {
+  finalCost: number;
+  estimated: number;
+  diff: number;
+  currency: string;
+}
+
+export interface TemplateVariable {
+  key: string;
+  description: string;
+  group: string;
+  example: string;
 }
 
 export interface EstimatedPriceRequest {

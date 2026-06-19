@@ -2,6 +2,7 @@ using ContractService.Application.Common;
 using ContractService.Application.Features.ContractsTemplates.ActivateContractTemplate;
 using ContractService.Application.Features.ContractsTemplates.CreateContractTemplate;
 using ContractService.Application.Features.ContractsTemplates.DeactivateContractTemplate;
+using ContractService.Application.Features.ContractsTemplates.GetAvailableVariables;
 using ContractService.Application.Features.ContractsTemplates.GetContractTemplate;
 using ContractService.Application.Features.ContractsTemplates.GetContractTemplates;
 using ContractService.Application.Features.ContractsTemplates.RenameContractTemplate;
@@ -32,6 +33,17 @@ public class ContractTemplateController(ISender sender) : ControllerBase
     {
         var template = await sender.Send(new GetContractTemplateQuery(id), cancellationToken);
         return Ok(template);
+    }
+
+    [HttpGet]
+    [Route("variables")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.InteractWithContractTemplates)]
+    public async Task<IActionResult> GetAvailableVariablesAsync(
+        [FromQuery] string documentType,
+        CancellationToken cancellationToken)
+    {
+        var variables = await sender.Send(new GetAvailableVariablesQuery(documentType), cancellationToken);
+        return Ok(variables);
     }
 
     [HttpPost]

@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using RentalService.Api.BackgroundServices;
 using RentalService.Api.OpenApiConfiguration;
 using RentalService.Api.Requests;
+using RentalService.Application.Abstractions;
 using RentalService.Application.Abstractions.Security;
 using RentalService.Application.Authorization;
 using RentalService.Application.Common;
@@ -29,6 +30,7 @@ using RentalService.Infrastructure.Messaging;
 using RentalService.Infrastructure.Messaging.Consumers;
 using RentalService.Infrastructure.Repositories;
 using RentalService.Infrastructure.Security;
+using RentalService.Infrastructure.Clients;
 using RentalService.Infrastructure.Services.ExternalServices;
 using RentalService.Infrastructure.Services.InternalServices;
 using RentalService.Infrastructure.Services.PricingPolicyServices;
@@ -75,6 +77,12 @@ builder.Services.AddHttpClient("UserApi", client =>
 builder.Services.AddHttpClient("CarApi", client =>
 {
     client.BaseAddress = new Uri("http://car-service:8080");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
+builder.Services.AddHttpClient<IPaymentServiceClient, PaymentServiceClient>(client =>
+{
+    client.BaseAddress = new Uri("http://payment-service:8080");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 
@@ -200,6 +208,16 @@ app.Use(async (context, next) =>
     try
     {
         await next();
+    }
+    catch (PassportRequiredException ex)
+    {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = "PassportRequired",
+            message = ex.Message
+        });
     }
     catch (ForbiddenException)
     {

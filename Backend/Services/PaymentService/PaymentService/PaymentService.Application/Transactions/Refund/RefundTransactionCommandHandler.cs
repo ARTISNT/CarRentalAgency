@@ -20,14 +20,11 @@ namespace PaymentService.Application.Transactions.Refund
 
         public async Task Handle(RefundTransactionCommand request, CancellationToken cancellationToken)
         {
-            var depositTransaction = await _unitOfWork.Transactions.GetByRentalIdAndTypeAsync(
+            var depositTransaction = await _unitOfWork.Transactions.GetCompletedByRentalIdAndTypeAsync(
                 request.RentalId, Domain.ValueObjects.PaymentType.Deposit);
 
             if (depositTransaction is null)
-                throw new InvalidOperationException("No successful deposit found for this rental");
-
-            if (depositTransaction.IsRefunded)
-                throw new InvalidOperationException("Deposit has already been refunded");
+                throw new InvalidOperationException("No completed deposit found for this rental");
 
             var refundToken = await _paymentGateway.RefundAsync(
                 depositTransaction.ExternalToken,

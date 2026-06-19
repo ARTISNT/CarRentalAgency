@@ -57,15 +57,31 @@ public class ContractSigningService  : IContractSigningService
         using Stream outputStream = new FileStream(dest, FileMode.Create, FileAccess.Write);
 
         StampingProperties stampingProperties = new StampingProperties();
-        
+
         PdfSigner signer = new PdfSigner(reader, outputStream, stampingProperties);
 
-        var rect = new Rectangle(36, 36, 300, 200); 
+        var pdfDoc = signer.GetDocument();
+        int lastPage = pdfDoc.GetNumberOfPages();
+        if (lastPage < 1)
+            lastPage = 1;
+
+        var pageSize = pdfDoc.GetPage(lastPage).GetPageSizeWithRotation();
+        float pageWidth = pageSize.GetWidth();
+
+        const float margin = 36f;
+        const float desiredWidth = 200f;
+        const float desiredHeight = 80f;
+        float rectWidth = Math.Min(desiredWidth, Math.Max(0f, pageWidth - 2f * margin));
+        float rectHeight = desiredHeight;
+        float x = pageWidth - rectWidth - margin;
+        float y = margin;
+
+        var rect = new Rectangle(x, y, rectWidth, rectHeight);
         PdfSignatureAppearance appearance = signer.GetSignatureAppearance();
-        
+
         appearance
             .SetPageRect(rect)
-            .SetPageNumber(1) 
+            .SetPageNumber(lastPage)
             .SetReason(string.IsNullOrEmpty(o) ? "Электронная подпись" : $"Подписано: {o}")
             .SetLocation(l)
             .SetRenderingMode(PdfSignatureAppearance.RenderingMode.NAME_AND_DESCRIPTION);

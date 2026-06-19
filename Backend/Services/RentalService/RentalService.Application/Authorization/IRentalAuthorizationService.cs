@@ -8,4 +8,5 @@ public interface IRentalAuthorizationService
     void EnsureCanEditRental();
     void EnsureCanDeleteRental();
     void EnsureCanChangeRentStatus();
+    void EnsureCanRequestReturn(Guid ownerId);
 }

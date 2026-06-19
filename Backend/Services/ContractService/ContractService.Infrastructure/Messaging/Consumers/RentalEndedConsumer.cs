@@ -12,6 +12,7 @@ public class RentalEndedConsumer(ISender sender) : IConsumer<RentalEndedIntegrat
         var msg = context.Message;
         await sender.Send(new EndContractByRentalCommand(
             msg.RentalId,
+            msg.ReturnDate,
             msg.Mileage,
             msg.FuelLevel,
             msg.PenaltyAmount,

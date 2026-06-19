@@ -127,6 +127,9 @@ namespace RentalService.Infrastructure.Migrations
                     b.Property<DateTime?>("ReturnDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("ReturnRequestedAtUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 

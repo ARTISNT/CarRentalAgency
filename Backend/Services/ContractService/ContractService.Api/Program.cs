@@ -64,6 +64,9 @@ builder.Services.AddScoped<IClientContext, ClientContext>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IContractSigningService, ContractSigningService>();
 builder.Services.AddScoped<IContractCertificateProvider, ContractCertificateProvider>();
+builder.Services.AddScoped<ITemplateRenderer, TemplateRenderer>();
+builder.Services.AddSingleton<ContractTemplateVariablesBuilder>();
+builder.Services.AddScoped<IPdfStampRenderer, PdfStampRenderer>();
 
 builder.Services.AddHttpClient("UserApi", client =>
 {

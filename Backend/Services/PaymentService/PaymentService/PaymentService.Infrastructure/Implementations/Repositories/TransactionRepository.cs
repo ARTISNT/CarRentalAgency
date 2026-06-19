@@ -44,6 +44,16 @@ namespace PaymentService.Infrastructure.Implementations.Repositories
                 .FirstOrDefaultAsync();
             return transaction;
         }
+        public async Task<Transaction?> GetCompletedByRentalIdAndTypeAsync(Guid rentalId, PaymentType paymentType)
+        {
+            return await _paymentContext.Transactions
+                .Where(t => t.RentalId == rentalId
+                         && t.PaymentType == paymentType
+                         && t.Status == Status.Success
+                         && !t.IsRefunded)
+                .OrderByDescending(t => t.CreatedAt)
+                .FirstOrDefaultAsync();
+        }
         public async Task<IReadOnlyList<Transaction>> GetAllByRentalIdAsync(Guid rentalId, CancellationToken cancellationToken = default)
         {
             return await _paymentContext.Transactions

@@ -23,6 +23,7 @@ public class Role : Enumeration
         return
         [
             Permission.ViewUsers,
+            Permission.ProcessCarReturn,
 
             Permission.InteractWithContractTemplates,
             Permission.ViewCars,

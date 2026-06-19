@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Table,
@@ -12,7 +12,9 @@ import {
   Form,
   Input,
   Select,
+  Divider,
 } from 'antd';
+import type { TextAreaRef } from 'antd/es/input/TextArea';
 import {
   PlusOutlined,
   EditOutlined,
@@ -22,10 +24,10 @@ import {
 } from '@ant-design/icons';
 import { templateApi } from '../../api/endpoints';
 import type { ContractTemplate, DocumentType } from '../../types';
+import TemplateVariablesPanel from './TemplateVariablesPanel';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
-const { TextArea } = Input;
 
 export default function AdminTemplatesPage() {
   const queryClient = useQueryClient();
@@ -36,6 +38,12 @@ export default function AdminTemplatesPage() {
   const [searchText, setSearchText] = useState('');
   const [typeFilter, setTypeFilter] = useState<DocumentType | 'all'>('all');
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
+
+  const [createForm] = Form.useForm<{ name: string; documentType: DocumentType; content: string }>();
+  const [editForm] = Form.useForm<{ content: string }>();
+  const createTextareaRef = useRef<TextAreaRef | null>(null);
+  const editTextareaRef = useRef<TextAreaRef | null>(null);
+  const [createVariablesType, setCreateVariablesType] = useState<DocumentType | null>(null);
 
   const { data: templates, isLoading, isError, error } = useQuery({
     queryKey: ['templates'],
@@ -302,43 +310,81 @@ export default function AdminTemplatesPage() {
       <Modal
         title={<Text style={{ color: '#fff' }}>Создать шаблон</Text>}
         open={createOpen}
-        onCancel={() => setCreateOpen(false)}
+        onCancel={() => {
+          setCreateOpen(false);
+          setCreateVariablesType(null);
+        }}
         footer={null}
-        width={640}
+        width={900}
       >
         <Form
+          form={createForm}
           layout="vertical"
           onFinish={(values) => createMutation.mutate(values)}
+          onValuesChange={(changed) => {
+            if ('documentType' in changed) {
+              setCreateVariablesType(changed.documentType as DocumentType);
+            }
+          }}
           style={{ marginTop: 16 }}
         >
-          <Form.Item
-            name="name"
-            label={<Text style={{ color: '#ccc' }}>Название</Text>}
-            rules={[{ required: true, message: 'Введите название' }]}
-          >
-            <Input style={{ background: '#111', color: '#fff', borderColor: '#333' }} />
-          </Form.Item>
-          <Form.Item
-            name="documentType"
-            label={<Text style={{ color: '#ccc' }}>Тип документа</Text>}
-            rules={[{ required: true, message: 'Выберите тип' }]}
-          >
-            <Select
-              style={{ background: '#111', color: '#fff' }}
-              options={[
-                { value: 'Contract', label: 'Аренда' },
-                { value: 'ReturnAct', label: 'Возврат' },
-                { value: 'Addition', label: 'Дополнительный' },
-              ]}
-            />
-          </Form.Item>
-          <Form.Item
-            name="content"
-            label={<Text style={{ color: '#ccc' }}>Содержимое</Text>}
-            rules={[{ required: true, message: 'Введите содержимое' }]}
-          >
-            <TextArea rows={8} style={{ background: '#111', color: '#fff', borderColor: '#333' }} />
-          </Form.Item>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+            <div>
+              <Form.Item
+                name="name"
+                label={<Text style={{ color: '#ccc' }}>Название</Text>}
+                rules={[{ required: true, message: 'Введите название' }]}
+              >
+                <Input style={{ background: '#111', color: '#fff', borderColor: '#333' }} />
+              </Form.Item>
+              <Form.Item
+                name="documentType"
+                label={<Text style={{ color: '#ccc' }}>Тип документа</Text>}
+                rules={[{ required: true, message: 'Выберите тип' }]}
+              >
+                <Select
+                  style={{ background: '#111', color: '#fff' }}
+                  options={[
+                    { value: 'Contract', label: 'Аренда' },
+                    { value: 'ReturnAct', label: 'Возврат' },
+                    { value: 'Addition', label: 'Дополнительный' },
+                  ]}
+                />
+              </Form.Item>
+              <Form.Item
+                name="content"
+                label={<Text style={{ color: '#ccc' }}>Содержимое</Text>}
+                rules={[{ required: true, message: 'Введите содержимое' }]}
+              >
+                <Input.TextArea
+                  rows={14}
+                  ref={(instance) => {
+                    createTextareaRef.current = instance;
+                  }}
+                  style={{ background: '#111', color: '#fff', borderColor: '#333' }}
+                />
+              </Form.Item>
+            </div>
+            <div>
+              <Text style={{ color: '#ccc', fontWeight: 600, display: 'block', marginBottom: 12 }}>
+                Доступные переменные
+              </Text>
+              {createVariablesType ? (
+                <TemplateVariablesPanel
+                  documentType={createVariablesType}
+                  textareaRef={createTextareaRef}
+                  onInsert={(newValue) => {
+                    createForm.setFieldValue('content', newValue);
+                  }}
+                />
+              ) : (
+                <Text style={{ color: '#888', fontSize: 13 }}>
+                  Сначала выберите тип документа, чтобы увидеть доступные переменные.
+                </Text>
+              )}
+            </div>
+          </div>
+          <Divider style={{ borderColor: 'rgba(255,255,255,0.06)' }} />
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={createMutation.isPending}>
               Создать
@@ -350,11 +396,13 @@ export default function AdminTemplatesPage() {
       <Modal
         title={<Text style={{ color: '#fff' }}>Редактировать содержимое</Text>}
         open={editContentOpen}
+        destroyOnClose
         onCancel={() => { setEditContentOpen(false); setSelectedTemplate(null); }}
         footer={null}
-        width={720}
+        width={900}
       >
         <Form
+          form={editForm}
           layout="vertical"
           initialValues={{ content: selectedTemplate?.content }}
           onFinish={(values) => {
@@ -364,13 +412,38 @@ export default function AdminTemplatesPage() {
           }}
           style={{ marginTop: 16 }}
         >
-          <Form.Item
-            name="content"
-            label={<Text style={{ color: '#ccc' }}>Содержимое</Text>}
-            rules={[{ required: true, message: 'Введите содержимое' }]}
-          >
-            <TextArea rows={12} style={{ background: '#111', color: '#fff', borderColor: '#333' }} />
-          </Form.Item>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+            <div>
+              <Form.Item
+                name="content"
+                label={<Text style={{ color: '#ccc' }}>Содержимое</Text>}
+                rules={[{ required: true, message: 'Введите содержимое' }]}
+              >
+                <Input.TextArea
+                  rows={18}
+                  ref={(instance) => {
+                    editTextareaRef.current = instance;
+                  }}
+                  style={{ background: '#111', color: '#fff', borderColor: '#333' }}
+                />
+              </Form.Item>
+            </div>
+            <div>
+              <Text style={{ color: '#ccc', fontWeight: 600, display: 'block', marginBottom: 12 }}>
+                Доступные переменные
+              </Text>
+              {selectedTemplate ? (
+                <TemplateVariablesPanel
+                  documentType={selectedTemplate.documentType}
+                  textareaRef={editTextareaRef}
+                  onInsert={(newValue) => {
+                    editForm.setFieldValue('content', newValue);
+                  }}
+                />
+              ) : null}
+            </div>
+          </div>
+          <Divider style={{ borderColor: 'rgba(255,255,255,0.06)' }} />
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={updateContentMutation.isPending}>
               Сохранить

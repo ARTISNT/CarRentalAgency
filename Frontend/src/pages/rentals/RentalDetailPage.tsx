@@ -24,6 +24,7 @@ import {
 } from 'antd';
 import {
   ArrowLeftOutlined,
+  CarOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   CreditCardOutlined,
@@ -174,8 +175,25 @@ export default function RentalDetailPage() {
   };
 
   const { hasPermission } = useAuthStore();
+  const isStaff = hasPermission('EditRent');
+
+  const requestReturnMutation = useMutation({
+    mutationFn: () => rentalApi.requestReturn(id!),
+    onSuccess: () => {
+      message.success('Заявка на возврат отправлена');
+      queryClient.invalidateQueries({ queryKey: ['rental', id] });
+      queryClient.invalidateQueries({ queryKey: ['rentals'] });
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      const msg = e?.response?.data?.message ?? e?.message ?? 'Ошибка при отправке заявки';
+      message.error(msg);
+    },
+  });
+
   const [isEndModalOpen, setIsEndModalOpen] = useState(false);
   const [endForm] = Form.useForm();
+  const [endReturnDate, setEndReturnDate] = useState<dayjs.Dayjs | null>(null);
 
   const endMutation = useMutation({
     mutationFn: (data: EndRentalRequest) => rentalApi.end(id!, data),
@@ -185,7 +203,24 @@ export default function RentalDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['rentals'] });
       setIsEndModalOpen(false);
     },
-    onError: () => message.error('Ошибка при завершении аренды'),
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      const msg = e?.response?.data?.message ?? e?.message ?? 'Ошибка при завершении аренды';
+      if (msg.includes('exceeds estimated')) {
+        message.warning(msg, 6);
+        queryClient.invalidateQueries({ queryKey: ['rental', id] });
+        queryClient.invalidateQueries({ queryKey: ['payment-transactions', id] });
+      } else {
+        message.error(msg);
+      }
+    },
+  });
+
+  const previewFinalCostQuery = useQuery({
+    queryKey: ['previewFinalCost', id, endReturnDate?.toISOString()],
+    queryFn: () => rentalApi.previewFinalCost(id!, endReturnDate!.toDate().toISOString()),
+    enabled: !!id && !!endReturnDate && isEndModalOpen,
+    staleTime: 0,
   });
 
   const handleEndRental = async () => {
@@ -211,16 +246,14 @@ export default function RentalDetailPage() {
   const depositRefunded = depositTransaction?.isRefunded ?? !!depositRefundTransaction;
 
   const refundMutation = useMutation({
-    mutationFn: () => paymentApi.refund(id!),
+    mutationFn: async () => {
+      // Заглушка: реальный возврат через BePaid отключён.
+      return null;
+    },
     onSuccess: () => {
-      message.success('Депозит возвращён на карту');
+      message.info('Возврат депозита будет обработан вручную');
       queryClient.invalidateQueries({ queryKey: ['rental', id] });
       queryClient.invalidateQueries({ queryKey: ['payment-transactions', id] });
-    },
-    onError: (err: unknown) => {
-      const e = err as { response?: { data?: { message?: string } }; message?: string };
-      const msg = e?.response?.data?.message ?? e?.message ?? 'Ошибка при возврате депозита';
-      message.error(msg);
     },
   });
 
@@ -350,39 +383,137 @@ export default function RentalDetailPage() {
                 </>
               )}
 
-              {statusName === 'Active' && hasPermission('EditRent') && (
+              {statusName === 'Active' && (
                 <>
                   <Divider style={{ borderColor: 'rgba(255,255,255,0.06)' }} />
+                  {rental.returnRequestedAtUtc && (
+                    <Alert
+                      type={
+                        (rental.fineOutstanding ?? 0) > 0
+                        || (rental.additionalOutstanding ?? 0) > 0
+                        || (rental.remainingAmount ?? 0) > 0
+                          ? 'warning'
+                          : 'success'
+                      }
+                      showIcon
+                      icon={<CarOutlined />}
+                      style={{ marginBottom: 16 }}
+                      message={
+                        <span>
+                          Заявка на возврат отправлена{' '}
+                          {dayjs(rental.returnRequestedAtUtc).format('DD.MM.YYYY HH:mm')}
+                        </span>
+                      }
+                      description={
+                        (rental.fineOutstanding ?? 0) > 0
+                        || (rental.additionalOutstanding ?? 0) > 0
+                        || (rental.remainingAmount ?? 0) > 0 ? (
+                          <Space direction="vertical" size={4}>
+                            <span>Перед завершением аренды погасите все задолженности:</span>
+                            {(rental.fineOutstanding ?? 0) > 0 && (
+                              <span>• Штраф: <b>{(rental.fineOutstanding ?? 0).toFixed(2)} Br</b></span>
+                            )}
+                            {(rental.additionalOutstanding ?? 0) > 0 && (
+                              <span>• Продление: <b>{(rental.additionalOutstanding ?? 0).toFixed(2)} Br</b></span>
+                            )}
+                            {(rental.remainingAmount ?? 0) > 0 && (
+                              <span>• Остаток: <b>{(rental.remainingAmount ?? 0).toFixed(2)} Br</b></span>
+                            )}
+                          </Space>
+                        ) : (
+                          <span>Все задолженности погашены. Менеджер скоро завершит аренду, после чего депозит будет возвращён.</span>
+                        )
+                      }
+                    />
+                  )}
                   <Space wrap>
-                    <Button
-                      type="primary"
-                      icon={<RollbackOutlined />}
-                      style={{ background: '#22c55e', borderColor: '#22c55e' }}
-                      onClick={() => {
-                        endForm.resetFields();
-                        setIsEndModalOpen(true);
-                      }}
-                    >
-                      Завершить аренду
-                    </Button>
-                    <Button
-                      icon={<HistoryOutlined />}
-                      onClick={() => {
-                        renewForm.resetFields();
-                        renewForm.setFieldsValue({
-                          newDate: dayjs(rental.endDate).add(1, 'day'),
-                        });
-                        setIsRenewModalOpen(true);
-                      }}
-                      disabled={(rental.fineOutstanding ?? 0) > 0 || (rental.remainingAmount ?? 0) > 0}
-                      title={(rental.fineOutstanding ?? 0) > 0
-                        ? 'Сначала оплатите штраф'
-                        : (rental.remainingAmount ?? 0) > 0
-                          ? 'Сначала погасите задолженность'
-                          : 'Продлить аренду'}
-                    >
-                      Продлить аренду
-                    </Button>
+                    {isStaff ? (
+                      rental.returnRequestedAtUtc && (
+                        <Button
+                          type="primary"
+                          icon={<RollbackOutlined />}
+                          style={{ background: '#22c55e', borderColor: '#22c55e' }}
+                          disabled={
+                            (rental.fineOutstanding ?? 0) > 0
+                            || (rental.additionalOutstanding ?? 0) > 0
+                            || (rental.remainingAmount ?? 0) > 0
+                          }
+                          title={
+                            (rental.fineOutstanding ?? 0) > 0
+                            || (rental.additionalOutstanding ?? 0) > 0
+                            || (rental.remainingAmount ?? 0) > 0
+                              ? 'Клиент должен погасить все задолженности перед завершением аренды'
+                              : undefined
+                          }
+                          onClick={() => {
+                            endForm.resetFields();
+                            setIsEndModalOpen(true);
+                          }}
+                        >
+                          Завершить аренду
+                        </Button>
+                      )
+                    ) : (
+                      !rental.returnRequestedAtUtc && (
+                        <Button
+                          type="primary"
+                           icon={<RollbackOutlined />}
+                           loading={requestReturnMutation.isPending}
+                           onClick={() => {
+                             Modal.confirm({
+                               title: 'Вернуть авто?',
+                               content: (
+                                 <Space direction="vertical" size={8}>
+                                   <span>Менеджер свяжется с вами для проверки авто. После этого аренда будет завершена.</span>
+                                   {previewFinalCostQuery.data && previewFinalCostQuery.data.diff < 0 && (
+                                     <span>
+                                       К возврату: <b>{(-previewFinalCostQuery.data.diff).toFixed(2)} {previewFinalCostQuery.data.currency}</b>
+                                     </span>
+                                   )}
+                                   {previewFinalCostQuery.data && previewFinalCostQuery.data.diff >= 0 && (
+                                     <span>
+                                       Доплата: <b>{previewFinalCostQuery.data.diff.toFixed(2)} {previewFinalCostQuery.data.currency}</b>
+                                     </span>
+                                   )}
+                                   <Alert
+                                     type="warning"
+                                     showIcon
+                                     message="Если вы не вернёте машину в указанный срок, будут начисляться штрафы за просрочку."
+                                   />
+                                 </Space>
+                               ),
+                               okText: 'Отправить заявку',
+                               okType: 'primary',
+                               okButtonProps: { style: { background: '#22c55e', borderColor: '#22c55e' } },
+                               cancelText: 'Отмена',
+                               onOk: () => requestReturnMutation.mutate(),
+                             });
+                           }}
+                        >
+                          Вернуть авто
+                        </Button>
+                      )
+                    )}
+                    {!rental.returnRequestedAtUtc && (
+                      <Button
+                        icon={<HistoryOutlined />}
+                        onClick={() => {
+                          renewForm.resetFields();
+                          renewForm.setFieldsValue({
+                            newDate: dayjs(rental.endDate).add(1, 'day'),
+                          });
+                          setIsRenewModalOpen(true);
+                        }}
+                        disabled={(rental.fineOutstanding ?? 0) > 0 || (rental.remainingAmount ?? 0) > 0}
+                        title={(rental.fineOutstanding ?? 0) > 0
+                          ? 'Сначала оплатите штраф'
+                          : (rental.remainingAmount ?? 0) > 0
+                            ? 'Сначала погасите задолженность'
+                            : 'Продлить аренду'}
+                      >
+                        Продлить аренду
+                      </Button>
+                    )}
                   </Space>
                 </>
               )}
@@ -772,6 +903,9 @@ export default function RentalDetailPage() {
             penaltyAmount: 0,
             damageDescription: null,
           }}
+          onValuesChange={(_changed, all) => {
+            if ('returnDate' in all) setEndReturnDate(all.returnDate ?? null);
+          }}
         >
           <Form.Item
             name="returnDate"
@@ -784,6 +918,26 @@ export default function RentalDetailPage() {
               disabledDate={(d) => d && d.isAfter(dayjs())}
             />
           </Form.Item>
+
+          {previewFinalCostQuery.data && (
+            <Alert
+              type={previewFinalCostQuery.data.diff > 0 ? 'warning' : 'success'}
+              showIcon
+              style={{ marginBottom: 12 }}
+              message={
+                previewFinalCostQuery.data.diff > 0
+                  ? `Доплата: ${previewFinalCostQuery.data.diff.toFixed(2)} ${previewFinalCostQuery.data.currency}`
+                  : previewFinalCostQuery.data.diff < 0
+                    ? `Будет возвращено: ${(-previewFinalCostQuery.data.diff).toFixed(2)} ${previewFinalCostQuery.data.currency} (включая депозит и переплату)`
+                    : 'Стоимость совпадает с предоплатой'
+              }
+              description={
+                previewFinalCostQuery.data.diff < 0
+                  ? `Деньги поступят на карту, с которой производилась оплата, в течение 3-5 рабочих дней.`
+                  : `Предварительная стоимость: ${previewFinalCostQuery.data.finalCost.toFixed(2)} ${previewFinalCostQuery.data.currency} (оценка: ${previewFinalCostQuery.data.estimated.toFixed(2)})`
+              }
+            />
+          )}
 
           <Form.Item
             name="mileage"

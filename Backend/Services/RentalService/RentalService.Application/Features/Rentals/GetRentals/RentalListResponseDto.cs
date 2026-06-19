@@ -18,6 +18,8 @@ public class RentalListResponseDto
 
     public DateTime EndDate { get; set; }
 
+    public DateTime? ReturnRequestedAtUtc { get; set; }
+
     public RentActivityStatus ActivityStatus { get; set; }
 
     public decimal TotalCost { get; set; }

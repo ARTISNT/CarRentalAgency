@@ -14,6 +14,8 @@ import {
   Statistic,
   Row,
   Col,
+  Alert,
+  Modal,
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -21,9 +23,11 @@ import {
   GiftOutlined,
   CalendarOutlined,
   CarOutlined,
+  ExclamationCircleOutlined,
+  IdcardOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { carApi, rentalApi } from '../../api/endpoints';
+import { carApi, rentalApi, userApi } from '../../api/endpoints';
 import { useAuthStore } from '../../stores/authStore';
 
 const { Title, Text } = Typography;
@@ -35,6 +39,15 @@ const statusLabels: Record<string, string> = {
   Maintenance: 'На обслуживании',
   Broken: 'Сломан',
   Returned: 'Возвращён',
+};
+
+type ApiError = {
+  response?: {
+    data?: {
+      error?: string;
+      message?: string;
+    };
+  };
 };
 
 export default function CreateRentalPage() {
@@ -52,6 +65,27 @@ export default function CreateRentalPage() {
     enabled: !!carId,
   });
 
+  const { data: userWithPassport, isLoading: isPassportLoading } = useQuery({
+    queryKey: ['user-passport', user?.id],
+    queryFn: () => userApi.getWithPassport(user!.id),
+    enabled: !!user?.id,
+  });
+
+  const hasPassport = !!userWithPassport?.passportDto;
+  const passportLoaded = !isPassportLoading && !!userWithPassport;
+
+  const showPassportRequiredModal = () => {
+    Modal.confirm({
+      title: 'Заполните паспортные данные',
+      content:
+        'Чтобы арендовать автомобиль, добавьте паспортные данные в профиле. После этого вернитесь на эту страницу.',
+      okText: 'Перейти в профиль',
+      cancelText: 'Отмена',
+      icon: <ExclamationCircleOutlined />,
+      onOk: () => navigate('/profile/passport'),
+    });
+  };
+
   const createMutation = useMutation({
     mutationFn: () =>
       rentalApi.create({
@@ -66,7 +100,15 @@ export default function CreateRentalPage() {
       queryClient.invalidateQueries({ queryKey: ['rentals'] });
       navigate(`/my-rentals/${data.rentalId}`);
     },
-    onError: () => {
+    onError: (err: ApiError) => {
+      const apiError = err?.response?.data?.error;
+      const apiMessage = err?.response?.data?.message;
+      if (apiError === 'PassportRequired') {
+        message.error(apiMessage || 'Заполните паспорт в профиле');
+        showPassportRequiredModal();
+        queryClient.invalidateQueries({ queryKey: ['user-passport', user?.id] });
+        return;
+      }
       message.error('Ошибка при создании аренды');
     },
   });
@@ -85,6 +127,15 @@ export default function CreateRentalPage() {
 
   const hours = dates[0] && dates[1] ? dates[1].diff(dates[0], 'hour') : 0;
   const estimatedCost = hours * car.pricePerHour;
+
+  const bookingDisabled =
+    !dates[0] || !dates[1] || car.status !== 'Available' || (passportLoaded && !hasPassport);
+
+  const bookingLabel = (() => {
+    if (car.status !== 'Available') return 'Автомобиль недоступен';
+    if (passportLoaded && !hasPassport) return 'Заполните паспорт, чтобы арендовать';
+    return 'Забронировать';
+  })();
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px' }}>
@@ -107,6 +158,29 @@ export default function CreateRentalPage() {
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24, width: '100%' }}>
               <Title level={3} style={{ color: '#fff', margin: 0 }}>Новая аренда</Title>
+
+              {passportLoaded && !hasPassport && (
+                <Alert
+                  type="warning"
+                  showIcon
+                  icon={<IdcardOutlined />}
+                  message="Не заполнены паспортные данные"
+                  description={
+                    <span>
+                      Чтобы арендовать автомобиль, добавьте паспортные данные в профиле.{' '}
+                      <a
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigate('/profile/passport');
+                        }}
+                        href="/profile/passport"
+                      >
+                        Заполнить паспорт
+                      </a>
+                    </span>
+                  }
+                />
+              )}
 
               <div
                 style={{
@@ -175,12 +249,18 @@ export default function CreateRentalPage() {
                 size="large"
                 block
                 style={{ height: 48, fontSize: 16 }}
-                disabled={!dates[0] || !dates[1] || car.status !== 'Available'}
+                disabled={bookingDisabled}
                 loading={createMutation.isPending}
                 icon={<CalendarOutlined />}
-                onClick={() => createMutation.mutate()}
+                onClick={() => {
+                  if (passportLoaded && !hasPassport) {
+                    showPassportRequiredModal();
+                    return;
+                  }
+                  createMutation.mutate();
+                }}
               >
-                {car.status !== 'Available' ? 'Автомобиль недоступен' : 'Забронировать'}
+                {bookingLabel}
               </Button>
             </div>
           </Card>

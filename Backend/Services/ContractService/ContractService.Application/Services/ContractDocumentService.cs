@@ -7,20 +7,23 @@ public class ContractDocumentService(
     IPdfContractGenerator pdfGenerator,
     IContractStorage storage,
     IContractSigningService signer,
-    IContractCertificateProvider contractCertificateProvider)
+    IContractCertificateProvider contractCertificateProvider,
+    IPdfStampRenderer stampRenderer)
 {
     public async Task GenerateContract(Guid clientId, string contractContent, Contract contract)
     {
         storage.EnsureDirectoriesExist(clientId, contract);
         string path = storage.GetContractPath(clientId, contract);
         await pdfGenerator.Generate(contractContent, path);
+        stampRenderer.AddSignatureStamp(path);
     }
-    
+
     public async Task GenerateAddition(Guid clientId, string additionContent, Contract contract)
     {
         storage.EnsureDirectoriesExist(clientId, contract);
         string path = storage.GetAdditionPath(clientId, contract);
         await pdfGenerator.Generate(additionContent, path);
+        stampRenderer.AddSignatureStamp(path);
     }
 
     public async Task GenerateReturnAct(Guid clientId, string returnActContent, Contract contract)
@@ -28,6 +31,7 @@ public class ContractDocumentService(
         storage.EnsureDirectoriesExist(clientId, contract);
         string path = storage.GetReturnActPath(clientId, contract);
         await pdfGenerator.Generate(returnActContent, path);
+        stampRenderer.AddSignatureStamp(path);
     }
 
     public void SignContract(Guid clientId, Contract contract, byte[] signatureImage)

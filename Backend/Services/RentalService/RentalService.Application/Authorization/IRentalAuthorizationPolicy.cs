@@ -8,4 +8,5 @@ public interface IRentalAuthorizationPolicy
     bool CanEditRental();
     bool CanDeleteRental();
     bool CanChangeRentStatus();
+    bool CanRequestReturn(Guid ownerId);
 }

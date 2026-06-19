@@ -24,7 +24,7 @@ public class CancelRentalCommandHandler(
         if (payment.PaidAmount.Amount > 0)
             payment.Refund(payment.PaidAmount, request.Reason);
         
-        await rentalRepository.UpdateRentalAsync(rental);
         await paymentRepository.UpdatePaymentAsync(payment);
+        await rentalRepository.UpdateRentalAsync(rental);
     }
 }

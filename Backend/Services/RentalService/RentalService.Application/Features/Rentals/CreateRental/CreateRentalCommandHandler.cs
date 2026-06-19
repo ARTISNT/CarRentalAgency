@@ -2,6 +2,7 @@ using Contracts.RentalEvents;
 using MediatR;
 using RentalService.Application.Authorization;
 using RentalService.Application.Common;
+using RentalService.Application.Exceptions;
 using RentalService.Domain.Payments;
 using RentalService.Domain.Rentals;
 using RentalService.Domain.Rentals.PricingPolicies;
@@ -31,6 +32,10 @@ public class CreateRentalCommandHandler(
         
         var user = await userTask;
         var car = await carTask;
+
+        if (!user.HasPassport)
+            throw new PassportRequiredException(
+                "Для создания аренды необходимо заполнить паспортные данные в профиле");
 
         var rentCarSnapshot = new RentCarSnapshot(car.Model, car.Brand, car.Generation, car.Variant, 
             car.IsFacelift, car.LicensePlate, car.AvailabilityStatus, car.PricePerHour, car.CarClass);

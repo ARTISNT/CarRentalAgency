@@ -12,6 +12,7 @@ using PaymentService.Infrastructure.Implementations.Clients;
 using PaymentService.Infrastructure.Implementations.ExternalServices.BePaid;
 using PaymentService.Infrastructure.Implementations.Repositories;
 using PaymentService.Infrastructure.Implementations.UnitOfWork;
+using PaymentService.Infrastructure.Messaging.Consumers;
 using PaymentService.Infrastructure.Persistence.DB;
 
 namespace PaymentService.Infrastructure.Extensions
@@ -55,6 +56,7 @@ namespace PaymentService.Infrastructure.Extensions
                         h.Username(configuration["MessageBroker:User"]);
                         h.Password(configuration["MessageBroker:Password"]);
                     });
+
                     cfg.ConfigureEndpoints(context);
                 });
             });

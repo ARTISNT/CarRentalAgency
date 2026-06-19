@@ -15,6 +15,7 @@ builder.Services.AddMassTransit(busConfigurator =>
     busConfigurator.AddConsumer<RentalCreatedConsumer>();
     busConfigurator.AddConsumer<RentalEndedConsumer>();
     busConfigurator.AddConsumer<RentalRenewedConsumer>();
+    busConfigurator.AddConsumer<RentalReturnRequestedConsumer>();
     busConfigurator.AddConsumer<ContractCreatedConsumer>();
     busConfigurator.AddConsumer<ContractSignedConsumer>();
     busConfigurator.AddConsumer<ContractEndedConsumer>();
@@ -53,6 +54,10 @@ builder.Services.AddMassTransit(busConfigurator =>
         configurator.ReceiveEndpoint("notification-service-rental-renewed", e =>
         {
             e.ConfigureConsumer<RentalRenewedConsumer>(context);
+        });
+        configurator.ReceiveEndpoint("notification-service-rental-return-requested", e =>
+        {
+            e.ConfigureConsumer<RentalReturnRequestedConsumer>(context);
         });
         configurator.ConfigureEndpoints(context);
     });

@@ -2,6 +2,7 @@ namespace Contracts.RentalEvents;
 
 public record RentalEndedIntegrationEvent(
     Guid RentalId,
+    Guid CarId,
     Guid UserId,
     string UserEmail,
     DateTime ReturnDate,

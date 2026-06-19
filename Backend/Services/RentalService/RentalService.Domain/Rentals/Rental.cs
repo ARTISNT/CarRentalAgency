@@ -15,6 +15,7 @@ public class Rental : Entity, IAggregateRoot
     public DateTime? ReturnDate { get; private set; }
     public DateTime? ContractSignedAt { get; private set; }
     public DateTime? DepositPaidAt { get; private set; }
+    public DateTime? ReturnRequestedAtUtc { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
     public string? PromoCode { get; private set; }
     public RentCarSnapshot RentCarSnapshot { get; }
@@ -120,18 +121,40 @@ public class Rental : Entity, IAggregateRoot
         if (ActivityStatus != RentActivityStatus.Active)
             throw new InvalidOperationException("Only active rental can be completed");
 
+        if (!ReturnRequestedAtUtc.HasValue)
+            throw new InvalidOperationException(
+                "Return must be requested by the renter first");
+
         if (returnDate < StartDate)
             throw new ArgumentException("Return date invalid");
 
         ReturnDate = returnDate;
         ActivityStatus = RentActivityStatus.Completed;
+        ReturnRequestedAtUtc = null;
         AddDomainEvent(new RentEndedDomainEvent(Id, DateTime.UtcNow));
+    }
+
+    public void RequestReturn(DateTime requestedAt)
+    {
+        if (ActivityStatus != RentActivityStatus.Active)
+            throw new InvalidOperationException(
+                "Only active rental can be returned");
+
+        if (ReturnRequestedAtUtc.HasValue)
+            return;
+
+        ReturnRequestedAtUtc = requestedAt;
+        AddDomainEvent(new RentReturnRequestedDomainEvent(Id, DateTime.UtcNow));
     }
 
     public void RenewRental(DateTime newEndDate)
     {
         if (ActivityStatus != RentActivityStatus.Active)
             throw new InvalidOperationException("Cannot renew rental");
+
+        if (ReturnRequestedAtUtc.HasValue)
+            throw new InvalidOperationException(
+                "Cannot renew rental with a pending return request");
 
         if (newEndDate <= EndDate)
             throw new ArgumentException("New end date must be greater then end date");
@@ -140,8 +163,8 @@ public class Rental : Entity, IAggregateRoot
 
         if (totalDuration.TotalDays > 31)
             throw new ArgumentException(
-                "Rental period cannot exceed 31 days"); 
-        
+                "Rental period cannot exceed 31 days");
+
         EndDate = newEndDate;
         AddDomainEvent(new RentRenewedDomainEvent(Id, DateTime.UtcNow));
     }

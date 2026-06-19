@@ -20,6 +20,7 @@ public class RentalConfiguration : IEntityTypeConfiguration<Rental>
             .IsRequired();
 
         builder.Property(x => x.ReturnDate);
+        builder.Property(x => x.ReturnRequestedAtUtc);
 
         builder.Property(x => x.ActivityStatus)
             .HasConversion(

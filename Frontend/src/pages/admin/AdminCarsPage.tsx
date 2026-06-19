@@ -22,9 +22,11 @@ import {
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
+  EyeOutlined,
 } from '@ant-design/icons';
 import dayjs, { type Dayjs } from 'dayjs';
 import { carApi } from '../../api/endpoints';
+import CarDetailsModal from './CarDetailsModal';
 import type { AddCarRequest, Car, UpdateCarRequest, BodyStyle, CarClass, DriveType, EngineType, TransmissionType } from '../../types';
 
 const { Title, Text } = Typography;
@@ -58,8 +60,9 @@ const nextActions: Record<string, { label: string; action: (id: string) => Promi
     { label: 'В ремонт', action: (id) => carApi.sendToRepair(id), color: '#f97316' },
   ],
   Returned: [
-    { label: 'Обработать', action: (id) => carApi.processReturn(id), color: '#22c55e' },
-    { label: 'Доступен', action: (id) => carApi.return_(id), color: '#22c55e' },
+    { label: 'Вернуть в строй', action: (id) => carApi.processReturnWithStatus(id, 'Available'), color: '#22c55e' },
+    { label: 'В обслуживание', action: (id) => carApi.processReturnWithStatus(id, 'Maintenance'), color: '#f97316' },
+    { label: 'Сломан', action: (id) => carApi.processReturnWithStatus(id, 'Broken'), color: '#ef4444' },
   ],
 };
 
@@ -163,6 +166,8 @@ export default function AdminCarsPage() {
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingCar, setEditingCar] = useState<Car | null>(null);
+  const [detailsCar, setDetailsCar] = useState<Car | null>(null);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [form] = Form.useForm<CarFormValues>();
 
   const [searchText, setSearchText] = useState('');
@@ -306,6 +311,17 @@ export default function AdminCarsPage() {
     }
   };
 
+  const openDetails = async (car: Car) => {
+    try {
+      const detailed = await carApi.getDetailed(car.id);
+      setDetailsCar(detailed);
+      setDetailsModalOpen(true);
+    } catch {
+      setDetailsCar(car);
+      setDetailsModalOpen(true);
+    }
+  };
+
   const columns = [
     {
       title: <Text style={{ color: '#888' }}>Автомобиль</Text>,
@@ -368,10 +384,18 @@ export default function AdminCarsPage() {
     {
       title: <Text style={{ color: '#888' }}>Действия</Text>,
       key: 'actions',
-      width: 280,
+      width: 320,
       fixed: 'right' as const,
       render: (_: unknown, record: Car) => (
         <Space>
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
+            style={{ color: '#a855f7' }}
+            onClick={() => openDetails(record)}
+          >
+            Детали
+          </Button>
           <Button
             type="link"
             icon={<EditOutlined />}
@@ -722,8 +746,14 @@ export default function AdminCarsPage() {
               },
             ]}
           />
-        </Form>
-      </Modal>
+          </Form>
+        </Modal>
+
+      <CarDetailsModal
+        car={detailsCar}
+        open={detailsModalOpen}
+        onClose={() => setDetailsModalOpen(false)}
+      />
     </div>
   );
 }

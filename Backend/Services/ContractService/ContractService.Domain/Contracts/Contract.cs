@@ -119,7 +119,13 @@ public sealed class Contract : Entity, IAggregateRoot
             Id,
             reason,
             DateTime.UtcNow));
-    } 
+    }
+
+    public void AddTerminationAddition(ContractAddition addition)
+    {
+        ArgumentNullException.ThrowIfNull(addition);
+        _contractAdditions.Add(addition);
+    }
     
     private static void ValidateIdentifiers(Guid contractTemplateId,
         Guid clientId, Guid rentalId, Guid contractAutoId)

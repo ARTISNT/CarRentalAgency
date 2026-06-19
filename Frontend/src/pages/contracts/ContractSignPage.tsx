@@ -50,15 +50,27 @@ export default function ContractSignPage() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const pdfBlobUrlRef = useRef<string | null>(null);
 
+  const { data: contract, isLoading } = useQuery({
+    queryKey: ['contract', id],
+    queryFn: () => contractApi.getById(id!),
+    enabled: !!id,
+  });
+
+  const isSigned = contract?.status === 'Active' || contract?.status === 'Ended';
+
   useEffect(() => {
     if (!id) return;
 
-    apiClient.get<Blob>(`/Contract/get-contract-${id}/pdf`, { responseType: 'blob' })
+    const url = isSigned
+      ? `/Contract/get-contract-${id}/pdf?signed=true`
+      : `/Contract/get-contract-${id}/pdf`;
+
+    apiClient.get<Blob>(url, { responseType: 'blob' })
       .then(response => {
         const blob = new Blob([response.data], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        pdfBlobUrlRef.current = url;
-        setPdfUrl(url);
+        const objectUrl = URL.createObjectURL(blob);
+        pdfBlobUrlRef.current = objectUrl;
+        setPdfUrl(objectUrl);
       })
       .catch(() => {});
 
@@ -68,13 +80,7 @@ export default function ContractSignPage() {
         pdfBlobUrlRef.current = null;
       }
     };
-  }, [id]);
-
-  const { data: contract, isLoading } = useQuery({
-    queryKey: ['contract', id],
-    queryFn: () => contractApi.getById(id!),
-    enabled: !!id,
-  });
+  }, [id, isSigned]);
 
   const signMutation = useMutation({
     mutationFn: () => {
@@ -90,11 +96,6 @@ export default function ContractSignPage() {
       message.success('Договор подписан');
       queryClient.invalidateQueries({ queryKey: ['contract', id] });
       queryClient.invalidateQueries({ queryKey: ['my-contracts'] });
-      if (contract?.rentalId) {
-        navigate(`/my-rentals/${contract.rentalId}`);
-      } else {
-        navigate('/my-contracts');
-      }
     },
     onError: (err: Error) => {
       if (err.message !== 'No signature') {

@@ -45,14 +45,19 @@ export default function PassportPage() {
     enabled: !!userId,
   });
 
-  const passport = userData?.passport;
+  const passport = userData?.passportDto;
+  const isReadonly = !!passport;
 
   useEffect(() => {
     if (passport) {
       form.setFieldsValue({
         ...passport,
-        passportIssueDate: passport.passportIssueDate as any,
-        birthDate: passport.birthDate as any,
+        passportIssueDate: passport.passportIssueDate
+          ? dayjs(passport.passportIssueDate).format('YYYY-MM-DD')
+          : undefined,
+        birthDate: passport.birthDate
+          ? dayjs(passport.birthDate).format('YYYY-MM-DD')
+          : undefined,
       });
     }
   }, [passport, form]);
@@ -167,6 +172,7 @@ export default function PassportPage() {
               form={form}
               layout="vertical"
               onFinish={handleSave}
+              disabled={isReadonly}
               style={{ maxWidth: 600 }}
             >
               <Row gutter={16}>
@@ -294,15 +300,17 @@ export default function PassportPage() {
 
               <Divider style={{ borderColor: 'rgba(255,255,255,0.06)' }} />
 
-              <Button
-                type="primary"
-                icon={<SaveOutlined />}
-                htmlType="submit"
-                loading={saveMutation.isPending}
-                size="large"
-              >
-                Сохранить
-              </Button>
+              {!isReadonly && (
+                <Button
+                  type="primary"
+                  icon={<SaveOutlined />}
+                  htmlType="submit"
+                  loading={saveMutation.isPending}
+                  size="large"
+                >
+                  Сохранить
+                </Button>
+              )}
             </Form>
           </Card>
         </Col>
