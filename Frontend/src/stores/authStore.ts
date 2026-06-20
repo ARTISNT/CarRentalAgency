@@ -7,9 +7,18 @@ interface DecodedToken {
   email?: string;
   role?: string;
   permissions?: string[];
+  email_verified?: string | boolean;
 }
 
-function decodeToken(token: string): { nameid: string; email: string; role: UserRole; permissions: string[] } | null {
+function decodeToken(
+  token: string,
+): {
+  nameid: string;
+  email: string;
+  role: UserRole;
+  permissions: string[];
+  emailVerified: boolean;
+} | null {
   try {
     const payload = token.split('.')[1];
     const decoded: DecodedToken = JSON.parse(atob(payload));
@@ -18,20 +27,46 @@ function decodeToken(token: string): { nameid: string; email: string; role: User
       email: decoded.email || '',
       role: (decoded.role as UserRole) || 'Client',
       permissions: decoded.permissions || [],
+      emailVerified:
+        decoded.email_verified === true || decoded.email_verified === 'true',
     };
   } catch {
     return null;
   }
 }
 
+interface AuthUser {
+  id: string;
+  email: string;
+  role: UserRole;
+  permissions: string[];
+  emailVerified: boolean;
+}
+
 interface AuthState {
   token: string | null;
-  user: { id: string; email: string; role: UserRole; permissions: string[] } | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   login: (token: string) => void;
   logout: () => void;
   hasPermission: (permission: string) => boolean;
   hasRole: (role: UserRole | UserRole[]) => boolean;
+}
+
+function buildUser(decoded: {
+  nameid: string;
+  email: string;
+  role: UserRole;
+  permissions: string[];
+  emailVerified: boolean;
+}): AuthUser {
+  return {
+    id: decoded.nameid,
+    email: decoded.email,
+    role: decoded.role,
+    permissions: decoded.permissions,
+    emailVerified: decoded.emailVerified,
+  };
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -40,7 +75,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const stored = localStorage.getItem('user');
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored) as AuthUser;
+        return { ...parsed, emailVerified: parsed.emailVerified ?? false };
       } catch {
         return null;
       }
@@ -49,7 +85,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (token) {
       const decoded = decodeToken(token);
       if (decoded) {
-        const user = { id: decoded.nameid, email: decoded.email, role: decoded.role, permissions: decoded.permissions };
+        const user = buildUser(decoded);
         localStorage.setItem('user', JSON.stringify(user));
         return user;
       }
@@ -62,7 +98,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     localStorage.setItem('token', token);
     const decoded = decodeToken(token);
     if (decoded) {
-      const user = { id: decoded.nameid, email: decoded.email, role: decoded.role, permissions: decoded.permissions };
+      const user = buildUser(decoded);
       localStorage.setItem('user', JSON.stringify(user));
       set({ token, user, isAuthenticated: true });
     }

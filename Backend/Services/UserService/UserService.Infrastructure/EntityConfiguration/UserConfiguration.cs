@@ -74,8 +74,27 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder
             .Property(u => u.Role)
             .HasConversion(
-                r => r.Name,                          
-                name => Role.FromName<Role>(name)     
+                r => r.Name,
+                name => Role.FromName<Role>(name)
             );
+
+        builder
+            .Property(u => u.IsActive)
+            .HasColumnName("is_active");
+
+        builder
+            .Property(u => u.EmailVerified)
+            .HasColumnName("email_verified");
+
+        builder.OwnsOne(u => u.VerificationToken, v =>
+        {
+            v.Property(t => t.TokenHash)
+                .HasColumnName("verification_token_hash")
+                .HasMaxLength(256);
+            v.Property(t => t.ExpiresAt)
+                .HasColumnName("verification_token_expires_at");
+            v.Property(t => t.CreatedAt)
+                .HasColumnName("verification_token_created_at");
+        });
     }
 }

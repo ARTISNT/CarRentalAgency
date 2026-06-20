@@ -12,6 +12,8 @@ using UserService.Application.Features.Users.GetUsersById;
 using UserService.Application.Features.Users.LoginUser;
 using UserService.Application.Features.Users.RegisterUser;
 using UserService.Application.Features.Users.RemoveUsers;
+using UserService.Application.Features.Users.ResendVerificationEmail;
+using UserService.Application.Features.Users.VerifyEmail;
 
 namespace UserService.Api.Controllers;
 
@@ -80,6 +82,43 @@ public class UserController(ISender sender) : ControllerBase
     {
         var token = await sender.Send(new LoginUserQuery(loginRequest.Email, loginRequest.Password));
         return Ok(token);
+    }
+
+    [HttpGet]
+    [Route("verify-email")]
+    public async Task<IActionResult> VerifyEmail([FromQuery] string token)
+    {
+        var result = await sender.Send(new VerifyEmailQuery(token));
+        var status = result switch
+        {
+            EmailVerificationResult.Success => "ok",
+            EmailVerificationResult.AlreadyVerified => "already_verified",
+            EmailVerificationResult.ExpiredToken => "expired",
+            EmailVerificationResult.InvalidToken => "invalid",
+            _ => "invalid"
+        };
+
+        return Redirect(BuildFrontendUrl($"/verify-email?status={status}"));
+    }
+
+    [HttpPost]
+    [Route("resend-verification-email")]
+    public async Task<IActionResult> ResendVerificationEmail([FromBody] ResendVerificationEmailRequest request)
+    {
+        var result = await sender.Send(new ResendVerificationEmailCommand(request.Email));
+
+        if (result == ResendVerificationEmailResult.UserNotFound)
+            return NotFound(new { error = "user_not_found" });
+
+        return Ok(new { result = result.ToString() });
+    }
+
+    private string BuildFrontendUrl(string path)
+    {
+        var baseUrl = HttpContext.RequestServices
+            .GetRequiredService<IConfiguration>()["App:FrontendBaseUrl"]
+            ?? "http://localhost:5173";
+        return $"{baseUrl.TrimEnd('/')}{path}";
     }
 
     [HttpPut]

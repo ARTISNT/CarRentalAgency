@@ -8,5 +8,6 @@ public enum NotificationType
     RentalReturnRequested,
     ContractCreated,
     ContractSigned,
-    ContractEnded
+    ContractEnded,
+    EmailVerification
 }

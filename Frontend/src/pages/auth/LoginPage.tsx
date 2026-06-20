@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Form, Input, Button, Card, Typography, message } from 'antd';
 import { MailOutlined, LockOutlined, CarOutlined } from '@ant-design/icons';
+import { AxiosError } from 'axios';
 import { useAuthStore } from '../../stores/authStore';
 import { authApi } from '../../api/endpoints';
 
@@ -19,8 +20,23 @@ export default function LoginPage() {
       login(token);
       message.success('Добро пожаловать!');
       navigate('/');
-    } catch {
-      message.error('Неверный email или пароль');
+    } catch (err) {
+      const axiosError = err as AxiosError<{ error?: string }>;
+      if (axiosError.response?.status === 403 && axiosError.response.data?.error === 'email_not_verified') {
+        message.warning({
+          content: (
+            <span>
+              Email не подтверждён.{' '}
+              <Link to="/verify-email" state={{ email: values.email }}>
+                Подтвердить
+              </Link>
+            </span>
+          ),
+          duration: 6,
+        });
+      } else {
+        message.error('Неверный email или пароль');
+      }
     } finally {
       setLoading(false);
     }

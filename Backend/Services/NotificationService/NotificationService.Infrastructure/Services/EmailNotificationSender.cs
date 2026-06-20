@@ -17,24 +17,11 @@ public class EmailNotificationSender(
 
         var toAddress = !string.IsNullOrWhiteSpace(email) ? email : settings.ToAddress;
 
-        var subject = type switch
+        var (subject, body) = type switch
         {
-            NotificationType.RentalCreated => "New Rental Created",
-            NotificationType.RentalEnded => "Rental Ended",
-            NotificationType.RentalRenewed => "Rental Renewed",
-            NotificationType.ContractCreated => "New Contract Created",
-            NotificationType.ContractSigned => "Contract Signed",
-            NotificationType.ContractEnded => "Contract Ended",
-            _ => $"Notification: {type}"
+            NotificationType.EmailVerification => BuildEmailVerificationMessage(message),
+            _ => BuildGenericMessage(userId, type, message)
         };
-
-        var body = $"""
-            <h2>{subject}</h2>
-            <p><strong>User ID:</strong> {userId}</p>
-            <p><strong>Type:</strong> {type}</p>
-            <hr/>
-            <p>{message}</p>
-            """;
 
         var mailMessage = new MimeMessage();
         mailMessage.From.Add(new MailboxAddress(settings.FromName, settings.FromAddress));
@@ -65,6 +52,49 @@ public class EmailNotificationSender(
                 toAddress, subject, userId, type);
             throw;
         }
+    }
+
+    private static (string Subject, string Body) BuildGenericMessage(Guid userId, NotificationType type, string message)
+    {
+        var subject = type switch
+        {
+            NotificationType.RentalCreated => "New Rental Created",
+            NotificationType.RentalEnded => "Rental Ended",
+            NotificationType.RentalRenewed => "Rental Renewed",
+            NotificationType.ContractCreated => "New Contract Created",
+            NotificationType.ContractSigned => "Contract Signed",
+            NotificationType.ContractEnded => "Contract Ended",
+            _ => $"Notification: {type}"
+        };
+
+        var body = $"""
+            <h2>{subject}</h2>
+            <p><strong>User ID:</strong> {userId}</p>
+            <p><strong>Type:</strong> {type}</p>
+            <hr/>
+            <p>{message}</p>
+            """;
+        return (subject, body);
+    }
+
+    private static (string Subject, string Body) BuildEmailVerificationMessage(string verificationLink)
+    {
+        const string subject = "Confirm your email";
+        var body = $"""
+            <h2>Confirm your email</h2>
+            <p>Welcome to Car Rental Agency! Please confirm your email address to activate your account.</p>
+            <p style="margin: 24px 0;">
+                <a href="{verificationLink}" style="background:#f97316;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;display:inline-block;">
+                    Confirm email
+                </a>
+            </p>
+            <p>Or copy and paste this link into your browser:</p>
+            <p><a href="{verificationLink}">{verificationLink}</a></p>
+            <p>The link is valid for 24 hours.</p>
+            <hr/>
+            <p>If you did not register, you can safely ignore this email.</p>
+            """;
+        return (subject, body);
     }
 }
 

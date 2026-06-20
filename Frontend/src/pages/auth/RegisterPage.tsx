@@ -14,8 +14,8 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await authApi.register(values);
-      message.success('Регистрация успешна! Теперь вы можете войти.');
-      navigate('/login');
+      message.success('Регистрация успешна! Проверьте почту для подтверждения email.');
+      navigate('/verify-email', { state: { email: values.email } });
     } catch {
       message.error('Ошибка при регистрации. Возможно, email уже используется.');
     } finally {

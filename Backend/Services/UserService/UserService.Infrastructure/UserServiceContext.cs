@@ -1,20 +1,24 @@
 using Microsoft.EntityFrameworkCore;
+using UserService.Application.EmailOutbox;
 using UserService.Domain.Common;
 using UserService.Domain.Users;
 using UserService.Infrastructure.DomainEvents;
+using UserService.Infrastructure.EmailOutbox;
 using UserService.Infrastructure.EntityConfiguration;
 
 namespace UserService.Infrastructure;
 
-public class UserServiceContext(IDomainEventDispatcher domainEventDispatcher, 
+public class UserServiceContext(IDomainEventDispatcher domainEventDispatcher,
     DbContextOptions<UserServiceContext> options) : DbContext(options)
 {
     public DbSet<User> Users { get; set; }
+    public DbSet<EmailOutboxEntry> EmailOutbox { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new UserConfiguration());
-        
+        modelBuilder.ApplyConfiguration(new EmailOutboxConfiguration());
+
         base.OnModelCreating(modelBuilder);
     }
 

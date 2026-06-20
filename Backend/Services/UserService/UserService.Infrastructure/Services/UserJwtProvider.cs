@@ -27,6 +27,7 @@ public sealed class UserJwtProvider(IConfiguration configuration) : IJwtProvider
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email.Value),
                 new Claim("role", user.Role.ToString()),
+                new Claim("email_verified", user.EmailVerified ? "true" : "false"),
             ]),
             Claims = new Dictionary<string, object>()
             {

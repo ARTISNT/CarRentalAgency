@@ -9,10 +9,14 @@ interface Props {
 }
 
 export default function ProtectedRoute({ children, roles, permission }: Props) {
-  const { isAuthenticated, hasRole, hasPermission } = useAuthStore();
+  const { isAuthenticated, hasRole, hasPermission, user } = useAuthStore();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (user && user.emailVerified === false) {
+    return <Navigate to="/verify-email" replace state={{ email: user.email }} />;
   }
 
   if (roles && !hasRole(roles)) {

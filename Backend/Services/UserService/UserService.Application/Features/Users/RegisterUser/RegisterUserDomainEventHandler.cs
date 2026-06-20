@@ -1,12 +1,14 @@
+using MediatR;
 using UserService.Application.Common;
+using UserService.Application.Features.Users.RequestEmailVerification;
 using UserService.Domain.DomainEvents;
 
 namespace UserService.Application.Features.Users.RegisterUser;
 
-public class RegisterUserDomainEventHandler : IDomainEventHandler<UserRegisteredDomainEvent>
+public class RegisterUserDomainEventHandler(ISender sender) : IDomainEventHandler<UserRegisteredDomainEvent>
 {
-    public Task HandleAsync(UserRegisteredDomainEvent domainEvent, CancellationToken cancellationToken)
+    public async Task HandleAsync(UserRegisteredDomainEvent domainEvent, CancellationToken cancellationToken)
     {
-        return Task.CompletedTask;
+        await sender.Send(new RequestEmailVerificationCommand(domainEvent.Id), cancellationToken);
     }
 }

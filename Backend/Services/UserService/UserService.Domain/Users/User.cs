@@ -7,14 +7,15 @@ namespace UserService.Domain.Users;
 
 public sealed class User : Entity, IAggregateRoot
 {
-    public bool IsActive { get; private set; } 
+    public bool IsActive { get; private set; }
     public bool EmailVerified { get; private set; }
     public Password Password { get; private set; }
     public PhoneNumber PhoneNumber { get; private set; }
     public Email Email { get; private set; }
     public Passport? Passport { get; private set; }
     public Role Role { get; private set; }
-    
+    public EmailVerificationToken? VerificationToken { get; private set; }
+
     private User() {}
 
     public User(PhoneNumber phoneNumber, Email email, Password password)
@@ -64,9 +65,46 @@ public sealed class User : Entity, IAggregateRoot
     {
         if(EmailVerified)
             throw new InvalidOperationException("Email is already verified.");
-        
+
         EmailVerified = true;
+        VerificationToken = null;
         AddDomainEvent(new UserEmailVerifiedDomainEvent(Id,  DateTime.UtcNow));
+    }
+
+    public void RequestEmailVerification(string tokenHash, DateTime expiresAt, DateTime now)
+    {
+        if (EmailVerified)
+            throw new InvalidOperationException("Email is already verified.");
+
+        if (string.IsNullOrWhiteSpace(tokenHash))
+            throw new ArgumentException("Token hash must be provided.", nameof(tokenHash));
+
+        VerificationToken = EmailVerificationToken.Create(tokenHash, expiresAt, now);
+    }
+
+    public void ConfirmEmail(string rawToken, IEmailVerificationTokenHasher hasher, DateTime now)
+    {
+        if (EmailVerified)
+            throw new InvalidOperationException("Email is already verified.");
+
+        if (VerificationToken is null)
+            throw new InvalidEmailVerificationTokenException();
+
+        if (VerificationToken.IsExpired(now))
+            throw new ExpiredEmailVerificationTokenException();
+
+        if (!hasher.Verify(rawToken, VerificationToken.TokenHash))
+            throw new InvalidEmailVerificationTokenException();
+
+        EmailVerified = true;
+        VerificationToken = null;
+        AddDomainEvent(new UserEmailVerifiedDomainEvent(Id, now));
+    }
+
+    public void ClearExpiredEmailVerificationToken()
+    {
+        if (VerificationToken is not null)
+            VerificationToken = null;
     }
 
     public void AddPassport(Passport passport)

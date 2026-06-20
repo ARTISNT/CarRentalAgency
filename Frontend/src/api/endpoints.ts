@@ -40,6 +40,11 @@ export const authApi = {
   register: (data: RegisterRequest) =>
     apiClient.post('/User/register', data).then((r) => r.data),
 
+  resendVerification: (email: string) =>
+    apiClient
+      .post<{ result: string }>('/User/resend-verification-email', { email })
+      .then((r) => r.data),
+
   addPassport: (userId: string, data: PassportRequest) =>
     apiClient.post(`/User/add-passport/${userId}`, data).then((r) => r.data),
 };

@@ -13,11 +13,14 @@ public class LoginUserQueryHandler(
 {
     public async Task<string> Handle(LoginUserQuery request, CancellationToken cancellationToken)
     {
-        var user = await userRepository.GetByEmailAsync(request.Email) ??
+        var user = await userRepository.GetByEmailAsync(request.Email, cancellationToken) ??
                    throw new KeyNotFoundException("User not found");
 
         if (!passwordProcessor.Verify(user.Password.Hash, request.Password))
             throw new UnauthorizedAccessException("Invalid password");
+
+        if (!user.EmailVerified)
+            throw new EmailNotVerifiedException("Email is not verified.");
 
         var token = jwtProvider.CreateJwtToken(user);
         return token;

@@ -6,6 +6,7 @@ import HeaderLayout from './components/HeaderLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
+import VerifyEmailPage from './pages/auth/VerifyEmailPage';
 import LandingPage from './pages/LandingPage';
 import CarCatalogPage from './pages/cars/CarCatalogPage';
 import CarDetailPage from './pages/cars/CarDetailPage';
@@ -71,6 +72,7 @@ function App() {
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
 
               <Route element={<HeaderLayout />}>
                 <Route path="/" element={<LandingPage />} />

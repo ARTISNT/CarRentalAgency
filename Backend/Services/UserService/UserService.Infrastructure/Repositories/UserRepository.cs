@@ -18,6 +18,16 @@ public class UserRepository(UserServiceContext context) : IUserRepository
         return user;
     }
 
+    public async Task<User?> GetByVerificationTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(tokenHash))
+            return null;
+
+        var user = await context.Users
+            .FirstOrDefaultAsync(u => u.VerificationToken != null && u.VerificationToken.TokenHash == tokenHash, cancellationToken);
+        return user;
+    }
+
     public async Task<IReadOnlyCollection<User>?> GetAllUsersAsync(UserSpecification userSpecification, CancellationToken cancellationToken = default)
     {
         var users = await context.Users.ApplyFiltering(userSpecification).ToListAsync(cancellationToken);
@@ -40,5 +50,15 @@ public class UserRepository(UserServiceContext context) : IUserRepository
     {
         context.Users.Remove(user);
         await context.SaveChangesAsync(cancellationToken);
+    }
+
+    public void Add(User user)
+    {
+        context.Users.Add(user);
+    }
+
+    public void Update(User user)
+    {
+        context.Users.Update(user);
     }
 }
