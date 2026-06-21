@@ -1,5 +1,6 @@
+using Contracts.Common;
 using MediatR;
 
 namespace RentalService.Application.Features.Rentals.CancelRental;
 
-public record CancelRentalCommand(Guid Id, DateTime CancelledAt, string? Reason = null) : IRequest;
+public record CancelRentalCommand(Guid Id, DateTime CancelledAt, string? Reason = null) : IRequest, IAuthorizedRequest;

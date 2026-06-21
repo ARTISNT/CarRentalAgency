@@ -1,5 +1,6 @@
+using Contracts.Common;
 using MediatR;
 
 namespace RentalService.Application.Features.Rentals.GetRentalForPayment;
 
-public record GetRentalForPaymentQuery(Guid Id) : IRequest<RentalForPaymentResponse>;
+public record GetRentalForPaymentQuery(Guid Id) : IRequest<RentalForPaymentResponse>, IAuthorizedRequest;

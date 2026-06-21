@@ -1,3 +1,4 @@
+using Contracts.Common;
 using ContractService.Domain.Contracts;
 using MediatR;
 
@@ -8,4 +9,4 @@ public record CreateContractTemplateCommand(
     string Content,
     string DocumentType,
     int Version = 1,
-    DateTime? ValidFrom = null) : IRequest;
+    DateTime? ValidFrom = null) : IRequest, IAuthorizedRequest;

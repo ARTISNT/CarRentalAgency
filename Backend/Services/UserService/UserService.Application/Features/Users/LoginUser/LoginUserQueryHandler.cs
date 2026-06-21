@@ -1,3 +1,4 @@
+using Contracts.Common;
 using MediatR;
 using UserService.Application.Common;
 using UserService.Domain.Common;
@@ -18,6 +19,9 @@ public class LoginUserQueryHandler(
 
         if (!passwordProcessor.Verify(user.Password.Hash, request.Password))
             throw new UnauthorizedAccessException("Invalid password");
+
+        if (!user.IsActive)
+            throw new AccountDeactivatedException("Account is deactivated.");
 
         if (!user.EmailVerified)
             throw new EmailNotVerifiedException("Email is not verified.");

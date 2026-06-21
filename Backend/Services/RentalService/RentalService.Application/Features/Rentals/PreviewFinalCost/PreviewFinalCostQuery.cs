@@ -1,5 +1,6 @@
+using Contracts.Common;
 using MediatR;
 
 namespace RentalService.Application.Features.Rentals.PreviewFinalCost;
 
-public record PreviewFinalCostQuery(Guid Id, DateTime ReturnDate) : IRequest<PreviewFinalCostResponse>;
+public record PreviewFinalCostQuery(Guid Id, DateTime ReturnDate) : IRequest<PreviewFinalCostResponse>, IAuthorizedRequest;

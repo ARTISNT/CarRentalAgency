@@ -49,7 +49,10 @@ public class UserAuthorizationService(
 
     private async Task<User> GetCurrentUser(CancellationToken cancellationToken)
     {
-        return await userRepository.GetByIdAsync(userContext.UserId, cancellationToken)
+        if (userContext.UserId is not Guid currentUserId)
+            throw new UserNotFoundException("Current user not found");
+
+        return await userRepository.GetByIdAsync(currentUserId, cancellationToken)
                ?? throw new UserNotFoundException("Current user not found");
     }
 }

@@ -4,4 +4,5 @@ public interface IClientContext
 {
     Guid ClientId { get; }
     string[] Permissions { get; }
+    bool? IsActive { get; }
 }

@@ -13,4 +13,13 @@ public class ClientContext(IHttpContextAccessor accessor) : IClientContext
         .FindAll("permissions")
         .Select(c => c.Value)
         .ToArray() ?? [];
+
+    public bool? IsActive
+    {
+        get
+        {
+            var claim = accessor.HttpContext?.User.FindFirst("is_active")?.Value;
+            return claim is null ? null : claim == "true";
+        }
+    }
 }

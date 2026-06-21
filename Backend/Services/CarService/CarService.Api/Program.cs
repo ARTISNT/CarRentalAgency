@@ -28,9 +28,14 @@ builder.Services.AddOpenApi(options =>
 builder.Services.AddControllers();
 builder.Services.AddDbContext<CarServiceDbContext>(options => 
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(
-    typeof(GetCarsQuery).Assembly,
-    typeof(Program).Assembly));
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssemblies(
+        typeof(GetCarsQuery).Assembly,
+        typeof(Program).Assembly);
+
+    cfg.AddOpenBehavior(typeof(AuthorizationBehavior<,>));
+});
 builder.Services.AddAutoMapper(cfg => { }, typeof(CarListResponse).Assembly, typeof(Program).Assembly);
 
 builder.Services.AddAuthorization(options =>
@@ -153,6 +158,20 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
+
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Contracts.Common.AccountDeactivatedException)
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new { error = "account_deactivated" });
+    }
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

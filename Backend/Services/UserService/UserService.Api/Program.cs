@@ -36,10 +36,14 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<UserServiceContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(
-    typeof(RegisterUserCommandHandler).Assembly,
-    typeof(Program).Assembly
-));
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssemblies(
+        typeof(RegisterUserCommandHandler).Assembly,
+        typeof(Program).Assembly);
+
+    cfg.AddOpenBehavior(typeof(AuthorizationBehavior<,>));
+});
 
 builder.Services.AddAutoMapper(cfg => { }, typeof(UserResponse).Assembly);
 

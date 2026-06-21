@@ -13,15 +13,18 @@ public class GetUserQueryHandler(
 {
     public async Task<IReadOnlyCollection<UserResponse>> Handle(GetUsersQuery query, CancellationToken cancellationToken)
     {
-        var currentUser = await userRepository.GetByIdAsync(userContext.UserId, cancellationToken);
+        if (userContext.UserId is Guid currentUserId)
+        {
+            var currentUser = await userRepository.GetByIdAsync(currentUserId, cancellationToken);
 
-        if (currentUser is not null && !currentUser.Role.HasPermission(Permission.ViewUsers))
-            query.UserSpecification.UserId = currentUser.Id;
+            if (currentUser is not null && !currentUser.Role.HasPermission(Permission.ViewUsers))
+                query.UserSpecification.UserId = currentUser.Id;
+        }
 
         var users = await userRepository.GetAllUsersAsync(query.UserSpecification, cancellationToken);
         if (users is null || !users.Any())
             return Array.Empty<UserResponse>();
-        
+
         return mapper.Map<IReadOnlyCollection<UserResponse>>(users);
     }
 }

@@ -1,4 +1,6 @@
+using Contracts.Common;
 using MediatR;
+using UserService.Application.Common;
 
 namespace UserService.Application.Features.Users.AddUserPassport;
 
@@ -10,4 +12,4 @@ public record AddUserPassportCommand(
     string PassportNumber,
     string IdentityNumber,
     DateTime PassportIssueDate,
-    DateTime BirthDate) : IRequest;
+    DateTime BirthDate) : IRequest, IAuthorizedRequest;

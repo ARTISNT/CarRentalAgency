@@ -1,3 +1,4 @@
+using Contracts.Common;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using UserService.Domain.Users;
@@ -26,6 +27,7 @@ public static class ExceptionHandlerExtensions
         return exception switch
         {
             EmailNotVerifiedException => (StatusCodes.Status403Forbidden, new { error = "email_not_verified" }),
+            AccountDeactivatedException => (StatusCodes.Status403Forbidden, new { error = "account_deactivated" }),
             UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, new { error = "unauthorized" }),
             KeyNotFoundException => (StatusCodes.Status404NotFound, new { error = "not_found" }),
             ArgumentException arg => (StatusCodes.Status400BadRequest, new { error = "bad_request", message = arg.Message }),

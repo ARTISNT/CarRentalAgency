@@ -2,5 +2,6 @@ namespace UserService.Application.Common;
 
 public interface IUserContext
 {
-    Guid UserId { get; }
+    Guid? UserId { get; }
+    bool IsUserRequest { get; }
 }

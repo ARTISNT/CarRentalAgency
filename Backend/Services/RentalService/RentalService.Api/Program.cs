@@ -50,10 +50,15 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddDbContext<RentalServiceContext>(options => 
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(
-    typeof(CreateRentalRequest).Assembly,
-    typeof(EndRentalCommandHandler).Assembly,
-    typeof(Program).Assembly));
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssemblies(
+        typeof(CreateRentalRequest).Assembly,
+        typeof(EndRentalCommandHandler).Assembly,
+        typeof(Program).Assembly);
+
+    cfg.AddOpenBehavior(typeof(AuthorizationBehavior<,>));
+});
 
 builder.Services.AddAutoMapper(cfg => { }, typeof(RentalCarResponse).Assembly);
 
@@ -224,6 +229,12 @@ app.Use(async (context, next) =>
         context.Response.StatusCode = StatusCodes.Status403Forbidden;
         context.Response.ContentType = "application/json";
         await context.Response.WriteAsJsonAsync(new { error = "Forbidden" });
+    }
+    catch (Contracts.Common.AccountDeactivatedException)
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new { error = "account_deactivated" });
     }
 });
 

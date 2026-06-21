@@ -1,3 +1,4 @@
+using Contracts.Common;
 using MediatR;
 
 namespace ContractService.Application.Features.Contracts.EndContract;
@@ -8,4 +9,4 @@ public record EndContractByRentalCommand(
     int Mileage,
     decimal FuelLevel,
     decimal PenaltyAmount,
-    string? DamageDescription) : IRequest;
+    string? DamageDescription) : IRequest, IAuthorizedRequest;

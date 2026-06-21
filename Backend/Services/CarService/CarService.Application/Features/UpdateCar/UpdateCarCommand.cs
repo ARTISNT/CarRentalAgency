@@ -1,4 +1,5 @@
 using CarService.Domain.Cars.Enums;
+using Contracts.Common;
 using CarService.Domain.Cars.ValueObjects;
 using MediatR;
 
@@ -12,4 +13,4 @@ public record UpdateCarCommand(Guid CarId, DateTime ReleaseDate,
     CarTechInfo CarTechInfo,
     PricePerHour PricePerHour,
     CarClass CarClass,
-    string PhotoUrl) : IRequest;
+    string PhotoUrl) : IRequest, IAuthorizedRequest;
