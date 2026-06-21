@@ -8,6 +8,7 @@ interface DecodedToken {
   role?: string;
   permissions?: string[];
   email_verified?: string | boolean;
+  is_active?: string | boolean;
 }
 
 function decodeToken(
@@ -18,6 +19,7 @@ function decodeToken(
   role: UserRole;
   permissions: string[];
   emailVerified: boolean;
+  isActive: boolean;
 } | null {
   try {
     const payload = token.split('.')[1];
@@ -29,6 +31,7 @@ function decodeToken(
       permissions: decoded.permissions || [],
       emailVerified:
         decoded.email_verified === true || decoded.email_verified === 'true',
+      isActive: decoded.is_active === true || decoded.is_active === 'true',
     };
   } catch {
     return null;
@@ -41,6 +44,7 @@ interface AuthUser {
   role: UserRole;
   permissions: string[];
   emailVerified: boolean;
+  isActive: boolean;
 }
 
 interface AuthState {
@@ -59,6 +63,7 @@ function buildUser(decoded: {
   role: UserRole;
   permissions: string[];
   emailVerified: boolean;
+  isActive: boolean;
 }): AuthUser {
   return {
     id: decoded.nameid,
@@ -66,6 +71,7 @@ function buildUser(decoded: {
     role: decoded.role,
     permissions: decoded.permissions,
     emailVerified: decoded.emailVerified,
+    isActive: decoded.isActive,
   };
 }
 
@@ -76,7 +82,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (stored) {
       try {
         const parsed = JSON.parse(stored) as AuthUser;
-        return { ...parsed, emailVerified: parsed.emailVerified ?? false };
+        return {
+          ...parsed,
+          emailVerified: parsed.emailVerified ?? false,
+          isActive: parsed.isActive ?? false,
+        };
       } catch {
         return null;
       }

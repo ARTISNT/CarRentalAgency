@@ -20,6 +20,13 @@ apiClient.interceptors.response.use(
     const reason = (error.response?.data as { error?: string } | undefined)?.error;
     const isBlob = error.config?.responseType === 'blob';
 
+    if (status === 403 && reason === 'account_deactivated' && !isBlob) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/account-deactivated';
+      return Promise.reject(error);
+    }
+
     if (status === 403 && reason === 'email_not_verified' && !isBlob) {
       const userRaw = localStorage.getItem('user');
       const email = userRaw ? (JSON.parse(userRaw) as { email?: string }).email : undefined;

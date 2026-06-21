@@ -22,7 +22,9 @@ export default function LoginPage() {
       navigate('/');
     } catch (err) {
       const axiosError = err as AxiosError<{ error?: string }>;
-      if (axiosError.response?.status === 403 && axiosError.response.data?.error === 'email_not_verified') {
+      if (axiosError.response?.status === 403 && axiosError.response.data?.error === 'account_deactivated') {
+        navigate('/account-deactivated');
+      } else if (axiosError.response?.status === 403 && axiosError.response.data?.error === 'email_not_verified') {
         message.warning({
           content: (
             <span>

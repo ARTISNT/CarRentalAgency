@@ -15,6 +15,10 @@ export default function ProtectedRoute({ children, roles, permission }: Props) {
     return <Navigate to="/login" replace />;
   }
 
+  if (user && user.isActive === false) {
+    return <Navigate to="/account-deactivated" replace />;
+  }
+
   if (user && user.emailVerified === false) {
     return <Navigate to="/verify-email" replace state={{ email: user.email }} />;
   }
