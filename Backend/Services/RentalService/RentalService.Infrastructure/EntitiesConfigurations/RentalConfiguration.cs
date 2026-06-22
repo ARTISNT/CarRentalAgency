@@ -21,6 +21,7 @@ public class RentalConfiguration : IEntityTypeConfiguration<Rental>
 
         builder.Property(x => x.ReturnDate);
         builder.Property(x => x.ReturnRequestedAtUtc);
+        builder.Property(x => x.DepositRefundedAt);
 
         builder.Property(x => x.ActivityStatus)
             .HasConversion(

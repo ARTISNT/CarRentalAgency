@@ -25,9 +25,14 @@ public class GetRentalsQueryHandler(
 
         var rentalIds = rentals.Select(r => r.Id).ToList();
         var payments = await paymentRepository.GetPaymentsByRentIdsAsync(rentalIds, cancellationToken);
+        var rentalsById = rentals.ToDictionary(r => r.Id);
         foreach (var dto in responses)
+        {
             if (payments.TryGetValue(dto.Id, out var payment))
                 dto.TotalCost = payment.EstimatedAmount.Amount;
+            if (rentalsById.TryGetValue(dto.Id, out var rental))
+                dto.DepositRefundedAt = rental.DepositRefundedAt;
+        }
 
         return responses;
     }

@@ -12,6 +12,7 @@ public class RentalResponse
     public DateTime EndDate { get; set; }
     public DateTime? ReturnDate { get; set; }
     public DateTime? ReturnRequestedAtUtc { get; set; }
+    public DateTime? DepositRefundedAt { get; set; }
 
     public decimal TotalCost { get; set; }
 
@@ -20,6 +21,10 @@ public class RentalResponse
     public decimal RequiredAmount { get; set; }
     public decimal RemainingAmount { get; set; }
     public string PaymentStatus { get; set; } = string.Empty;
+
+    public decimal FineOutstanding { get; set; }
+
+    public Guid CarRenterId { get; set; }
 
     public RentalCarResponse Car { get; set; } = null!;
 

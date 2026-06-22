@@ -176,12 +176,14 @@ export interface RentalResponse {
   id: string;
   car: RentalCarInfo;
   renter: RentalRenterInfo;
+  carRenterId: string;
   startDate: string;
   endDate: string;
   activityStatus: { name: string; id: number };
   totalCost: number;
   returnDate: string | null;
   returnRequestedAtUtc: string | null;
+  depositRefundedAt: string | null;
   depositAmount: number;
   paidAmount: number;
   requiredAmount: number;
@@ -203,6 +205,7 @@ export interface RentalListItem {
   totalCost: number;
   returnDate: string | null;
   returnRequestedAtUtc: string | null;
+  depositRefundedAt: string | null;
 }
 
 export interface CreateRentalRequest {
@@ -227,6 +230,14 @@ export interface EndRentalRequest {
 
 export interface CancelRentalRequest {
   reason: string | null;
+}
+
+export interface MarkDepositRefundedRequest {
+  note: string | null;
+}
+
+export interface OutstandingFinesResponse {
+  outstandingFines: number;
 }
 
 export interface PreviewFinalCostResponse {

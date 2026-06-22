@@ -25,10 +25,12 @@ import {
   CarOutlined,
   ExclamationCircleOutlined,
   IdcardOutlined,
+  WarningOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { carApi, rentalApi, userApi } from '../../api/endpoints';
 import { useAuthStore } from '../../stores/authStore';
+import { OUTSTANDING_FINES_QUERY_KEY, useOutstandingFines } from '../../hooks/useOutstandingFines';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -71,8 +73,14 @@ export default function CreateRentalPage() {
     enabled: !!user?.id,
   });
 
+  const { data: outstandingFinesData, isLoading: isFinesLoading } = useOutstandingFines(user?.id);
+
   const hasPassport = !!userWithPassport?.passportDto;
   const passportLoaded = !isPassportLoading && !!userWithPassport;
+
+  const outstandingFines = outstandingFinesData?.outstandingFines ?? 0;
+  const finesLoaded = !isFinesLoading && !!outstandingFinesData;
+  const hasUnpaidFines = finesLoaded && outstandingFines > 0;
 
   const showPassportRequiredModal = () => {
     Modal.confirm({
@@ -83,6 +91,17 @@ export default function CreateRentalPage() {
       cancelText: 'Отмена',
       icon: <ExclamationCircleOutlined />,
       onOk: () => navigate('/profile/passport'),
+    });
+  };
+
+  const showUnpaidFinesModal = () => {
+    Modal.confirm({
+      title: 'Сначала оплатите штрафы',
+      content: `У вас есть неоплаченные штрафы на сумму ${outstandingFines.toFixed(2)} Br. Погасите их, чтобы создать новую аренду.`,
+      okText: 'Перейти к арендам',
+      cancelText: 'Отмена',
+      icon: <ExclamationCircleOutlined />,
+      onOk: () => navigate('/my-rentals'),
     });
   };
 
@@ -109,6 +128,12 @@ export default function CreateRentalPage() {
         queryClient.invalidateQueries({ queryKey: ['user-passport', user?.id] });
         return;
       }
+      if (apiError === 'UnpaidFine') {
+        message.error(apiMessage || 'Сначала оплатите штрафы');
+        showUnpaidFinesModal();
+        queryClient.invalidateQueries({ queryKey: OUTSTANDING_FINES_QUERY_KEY(user?.id) });
+        return;
+      }
       message.error('Ошибка при создании аренды');
     },
   });
@@ -129,11 +154,16 @@ export default function CreateRentalPage() {
   const estimatedCost = hours * car.pricePerHour;
 
   const bookingDisabled =
-    !dates[0] || !dates[1] || car.status !== 'Available' || (passportLoaded && !hasPassport);
+    !dates[0]
+    || !dates[1]
+    || car.status !== 'Available'
+    || (passportLoaded && !hasPassport)
+    || (finesLoaded && hasUnpaidFines);
 
   const bookingLabel = (() => {
     if (car.status !== 'Available') return 'Автомобиль недоступен';
     if (passportLoaded && !hasPassport) return 'Заполните паспорт, чтобы арендовать';
+    if (finesLoaded && hasUnpaidFines) return 'Сначала оплатите штрафы';
     return 'Забронировать';
   })();
 
@@ -176,6 +206,29 @@ export default function CreateRentalPage() {
                         href="/profile/passport"
                       >
                         Заполнить паспорт
+                      </a>
+                    </span>
+                  }
+                />
+              )}
+
+              {finesLoaded && hasUnpaidFines && (
+                <Alert
+                  type="error"
+                  showIcon
+                  icon={<WarningOutlined />}
+                  message={`Неоплаченные штрафы: ${outstandingFines.toFixed(2)} Br`}
+                  description={
+                    <span>
+                      Погасите все штрафы, прежде чем создавать новую аренду.{' '}
+                      <a
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigate('/my-rentals');
+                        }}
+                        href="/my-rentals"
+                      >
+                        Перейти к моим арендам
                       </a>
                     </span>
                   }
@@ -255,6 +308,10 @@ export default function CreateRentalPage() {
                 onClick={() => {
                   if (passportLoaded && !hasPassport) {
                     showPassportRequiredModal();
+                    return;
+                  }
+                  if (finesLoaded && hasUnpaidFines) {
+                    showUnpaidFinesModal();
                     return;
                   }
                   createMutation.mutate();

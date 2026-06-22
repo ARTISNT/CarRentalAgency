@@ -22,6 +22,15 @@ namespace PaymentService.Application.Transactions.CreateRemaining
 
         public async Task<string> Handle(CreateRemainingPaymentCommand request, CancellationToken cancellationToken)
         {
+            var pendingRemaining = await _unitOfWork.Transactions.GetPendingByRentalIdAndTypesAsync(
+                request.RentalId, new[] { PaymentType.Fine, PaymentType.Additional });
+
+            if (pendingRemaining.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    "Доплата по аренде уже инициирована. Дождитесь завершения или отмените предыдущую попытку.");
+            }
+
             var rental = await _rentalClient.GetRentalByIdAsync(request.RentalId);
 
             if (rental.ActivityStatus != "Active" && rental.ActivityStatus != "Completed")

@@ -25,11 +25,35 @@ namespace PaymentService.Application.Transactions.CreateFine
             if (request.Amount <= 0)
                 throw new ArgumentException("Fine amount must be positive");
 
+            var existingCompleted = await _unitOfWork.Transactions.GetCompletedByRentalIdAndTypeAsync(
+                request.RentalId, PaymentType.Fine);
+
+            if (existingCompleted is not null)
+            {
+                throw new InvalidOperationException(
+                    "Штраф по этой аренде уже оплачен");
+            }
+
+            var pendingFines = await _unitOfWork.Transactions.GetPendingByRentalIdAndTypesAsync(
+                request.RentalId, new[] { PaymentType.Fine });
+
+            if (pendingFines.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    "Оплата штрафа уже инициирована. Дождитесь завершения или отмените предыдущую попытку.");
+            }
+
             var rental = await _rentalClient.GetRentalByIdAsync(request.RentalId);
 
             if (rental.ActivityStatus != "Active" && rental.ActivityStatus != "Completed")
                 throw new InvalidOperationException(
                     "Cannot pay fine for a rental that hasn't started yet.");
+
+            if (rental.FineOutstanding <= 0)
+            {
+                throw new InvalidOperationException(
+                    "No outstanding fine for this rental — already paid");
+            }
 
             if (request.Amount > rental.FineOutstanding)
             {

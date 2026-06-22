@@ -24,18 +24,25 @@ public class CreateRentalCommandHandler(
     public async Task<Guid> Handle(CreateRentalCommand request, CancellationToken cancellationToken)
     {
         authorizationService.EnsureCanCreateRental(request.UserId);
-        
+
         var userTask = userExternalService.GetUserForRentAsync(request.UserId);
         var carTask = carExternalService.GetCarForRentAsync(request.CarId);
-        
-        await Task.WhenAll(userTask, carTask);
-        
+        var outstandingFinesTask = paymentRepository.GetOutstandingFinesForRenterAsync(request.UserId, cancellationToken);
+
+        await Task.WhenAll(userTask, carTask, outstandingFinesTask);
+
         var user = await userTask;
         var car = await carTask;
+        var outstandingFines = await outstandingFinesTask;
 
         if (!user.HasPassport)
             throw new PassportRequiredException(
                 "Для создания аренды необходимо заполнить паспортные данные в профиле");
+
+        if (outstandingFines > 0)
+            throw new UnpaidFineException(
+                "У вас есть неоплаченные штрафы. Погасите их перед созданием новой аренды.",
+                outstandingFines);
 
         var rentCarSnapshot = new RentCarSnapshot(car.Model, car.Brand, car.Generation, car.Variant, 
             car.IsFacelift, car.LicensePlate, car.AvailabilityStatus, car.PricePerHour, car.CarClass);

@@ -16,6 +16,7 @@ public class Rental : Entity, IAggregateRoot
     public DateTime? ContractSignedAt { get; private set; }
     public DateTime? DepositPaidAt { get; private set; }
     public DateTime? ReturnRequestedAtUtc { get; private set; }
+    public DateTime? DepositRefundedAt { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
     public string? PromoCode { get; private set; }
     public RentCarSnapshot RentCarSnapshot { get; }
@@ -79,6 +80,23 @@ public class Rental : Entity, IAggregateRoot
             throw new InvalidOperationException("Cannot mark deposit as paid");
 
         DepositPaidAt = paidAt;
+    }
+
+    public void MarkDepositRefundedManually(DateTime refundedAt, string? note = null)
+    {
+        if (ActivityStatus != RentActivityStatus.Completed &&
+            ActivityStatus != RentActivityStatus.Cancelled)
+        {
+            throw new InvalidOperationException(
+                "Депозит можно пометить возвращённым только после завершения или отмены аренды");
+        }
+
+        if (DepositRefundedAt.HasValue)
+            throw new InvalidOperationException(
+                "Депозит уже помечен как возвращённый");
+
+        DepositRefundedAt = refundedAt;
+        AddDomainEvent(new RentDepositRefundedManuallyDomainEvent(Id, refundedAt, note, DateTime.UtcNow));
     }
 
     public void StartRental()

@@ -39,6 +39,7 @@ import dayjs from 'dayjs';
 import { rentalApi, contractApi, paymentApi } from '../../api/endpoints';
 import apiClient from '../../api/client';
 import { useAuthStore } from '../../stores/authStore';
+import { OUTSTANDING_FINES_QUERY_KEY, useOutstandingFines } from '../../hooks/useOutstandingFines';
 import type {
   EndRentalRequest,
   RentActivityStatus,
@@ -92,20 +93,28 @@ export default function RentalDetailPage() {
   const pollCountRef = useRef(0);
   const [pollExpired, setPollExpired] = useState(false);
 
-  const { data: rental, isLoading } = useQuery({
+  const { data: rental, isLoading, refetch: refetchRental } = useQuery({
     queryKey: ['rental', id],
     queryFn: () => rentalApi.getById(id!),
     enabled: !!id,
   });
 
+  const renterId = rental?.carRenterId;
+  const { data: outstandingFinesData } = useOutstandingFines(renterId);
+  const outstandingFines = outstandingFinesData?.outstandingFines ?? 0;
+
   useEffect(() => {
     if (searchParams.get('paid') === '1') {
       message.success('Оплата прошла успешно');
+      void refetchRental();
+      queryClient.invalidateQueries({ queryKey: ['payment-transactions', id] });
+      queryClient.invalidateQueries({ queryKey: ['rentals'] });
+      queryClient.invalidateQueries({ queryKey: OUTSTANDING_FINES_QUERY_KEY(renterId) });
       const next = new URLSearchParams(searchParams);
       next.delete('paid');
       setSearchParams(next, { replace: true });
     }
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams, refetchRental, queryClient, id, renterId]);
 
   const { data: contracts } = useQuery({
     queryKey: ['contract-by-rental', id],
@@ -245,25 +254,16 @@ export default function RentalDetailPage() {
   const depositRefundTransaction = transactions?.find((t) => t.type === 'DepositRefund');
   const depositRefunded = depositTransaction?.isRefunded ?? !!depositRefundTransaction;
 
-  const refundMutation = useMutation({
-    mutationFn: async () => {
-      // Заглушка: реальный возврат через BePaid отключён.
-      return null;
-    },
+  const markDepositRefundedMutation = useMutation({
+    mutationFn: ({ note }: { note?: string | null }) =>
+      rentalApi.markDepositRefunded(id!, note),
     onSuccess: () => {
-      message.info('Возврат депозита будет обработан вручную');
+      message.success('Депозит помечен как возвращённый (заглушка: реальная интеграция в разработке)');
       queryClient.invalidateQueries({ queryKey: ['rental', id] });
       queryClient.invalidateQueries({ queryKey: ['payment-transactions', id] });
     },
+    onError: () => message.error('Не удалось пометить возврат депозита'),
   });
-
-  const canRefundDeposit =
-    rental
-      ? (rental.activityStatus.name === 'Completed' || rental.activityStatus.name === 'Cancelled') &&
-        !!depositTransaction &&
-        !depositRefunded &&
-        (rental.fineOutstanding ?? 0) === 0
-      : false;
 
   if (isLoading) {
     return (
@@ -389,7 +389,7 @@ export default function RentalDetailPage() {
                   {rental.returnRequestedAtUtc && (
                     <Alert
                       type={
-                        (rental.fineOutstanding ?? 0) > 0
+                        outstandingFines > 0
                         || (rental.additionalOutstanding ?? 0) > 0
                         || (rental.remainingAmount ?? 0) > 0
                           ? 'warning'
@@ -405,13 +405,13 @@ export default function RentalDetailPage() {
                         </span>
                       }
                       description={
-                        (rental.fineOutstanding ?? 0) > 0
+                        outstandingFines > 0
                         || (rental.additionalOutstanding ?? 0) > 0
                         || (rental.remainingAmount ?? 0) > 0 ? (
                           <Space direction="vertical" size={4}>
                             <span>Перед завершением аренды погасите все задолженности:</span>
-                            {(rental.fineOutstanding ?? 0) > 0 && (
-                              <span>• Штраф: <b>{(rental.fineOutstanding ?? 0).toFixed(2)} Br</b></span>
+                            {outstandingFines > 0 && (
+                              <span>• Штраф: <b>{outstandingFines.toFixed(2)} Br</b></span>
                             )}
                             {(rental.additionalOutstanding ?? 0) > 0 && (
                               <span>• Продление: <b>{(rental.additionalOutstanding ?? 0).toFixed(2)} Br</b></span>
@@ -434,12 +434,12 @@ export default function RentalDetailPage() {
                           icon={<RollbackOutlined />}
                           style={{ background: '#22c55e', borderColor: '#22c55e' }}
                           disabled={
-                            (rental.fineOutstanding ?? 0) > 0
+                            outstandingFines > 0
                             || (rental.additionalOutstanding ?? 0) > 0
                             || (rental.remainingAmount ?? 0) > 0
                           }
                           title={
-                            (rental.fineOutstanding ?? 0) > 0
+                            outstandingFines > 0
                             || (rental.additionalOutstanding ?? 0) > 0
                             || (rental.remainingAmount ?? 0) > 0
                               ? 'Клиент должен погасить все задолженности перед завершением аренды'
@@ -504,8 +504,8 @@ export default function RentalDetailPage() {
                           });
                           setIsRenewModalOpen(true);
                         }}
-                        disabled={(rental.fineOutstanding ?? 0) > 0 || (rental.remainingAmount ?? 0) > 0}
-                        title={(rental.fineOutstanding ?? 0) > 0
+                        disabled={outstandingFines > 0 || (rental.remainingAmount ?? 0) > 0}
+                        title={outstandingFines > 0
                           ? 'Сначала оплатите штраф'
                           : (rental.remainingAmount ?? 0) > 0
                             ? 'Сначала погасите задолженность'
@@ -737,6 +737,17 @@ export default function RentalDetailPage() {
                       Оплачено полностью
                     </Tag>
                   )}
+                  {outstandingFines > 0 ? (
+                    <Tag style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none' }}>
+                      <WarningOutlined style={{ marginRight: 4 }} />
+                      Штраф: {outstandingFines.toFixed(2)} Br
+                    </Tag>
+                  ) : (
+                    <Tag style={{ backgroundColor: '#22c55e', color: '#fff', border: 'none' }}>
+                      <CheckCircleOutlined style={{ marginRight: 4 }} />
+                      Штрафов нет
+                    </Tag>
+                  )}
                   {depositRefunded && (
                     <Tag style={{ backgroundColor: '#22c55e', color: '#fff', border: 'none' }}>
                       <RollbackOutlined style={{ marginRight: 4 }} />
@@ -761,7 +772,7 @@ export default function RentalDetailPage() {
                   </div>
                 </div>
 
-                {(rental.fineOutstanding ?? 0) > 0 && (
+                {outstandingFines > 0 && (
                   <>
                     <Divider style={{ borderColor: 'rgba(255,255,255,0.06)', margin: '12px 0' }} />
                     <Alert
@@ -770,7 +781,7 @@ export default function RentalDetailPage() {
                       icon={<WarningOutlined />}
                       message={
                         <span>
-                          Непогашенный штраф: <b>{(rental.fineOutstanding ?? 0).toFixed(2)} Br</b>
+                          Непогашенный штраф: <b>{outstandingFines.toFixed(2)} Br</b>
                         </span>
                       }
                       description="Продление аренды недоступно, пока штраф не оплачен."
@@ -789,7 +800,7 @@ export default function RentalDetailPage() {
 
                 {(rental.additionalOutstanding ?? 0) > 0 && (
                   <>
-                    {(rental.fineOutstanding ?? 0) === 0 && <Divider style={{ borderColor: 'rgba(255,255,255,0.06)', margin: '12px 0' }} />}
+                    {outstandingFines === 0 && <Divider style={{ borderColor: 'rgba(255,255,255,0.06)', margin: '12px 0' }} />}
                     <Alert
                       type="warning"
                       showIcon
@@ -811,7 +822,7 @@ export default function RentalDetailPage() {
                 )}
 
                 {(rental.remainingAmount ?? 0) > 0
-                  && (rental.fineOutstanding ?? 0) === 0
+                  && outstandingFines === 0
                   && (rental.additionalOutstanding ?? 0) === 0
                   && (statusName === 'Active' || statusName === 'Completed') && (
                     <Button
@@ -825,53 +836,42 @@ export default function RentalDetailPage() {
                     </Button>
                   )}
 
-                {canRefundDeposit && (
-                  <>
-                    <Divider style={{ borderColor: 'rgba(255,255,255,0.06)', margin: '12px 0' }} />
-                    <Alert
-                      type="success"
-                      showIcon
-                      icon={<CheckCircleOutlined />}
-                      message={
-                        <span>
-                          Аренда завершена. Депозит <b>{(rental.depositAmount ?? 0).toFixed(2)} Br</b> готов к возврату.
-                        </span>
-                      }
-                      description="Средства будут переведены на карту, с которой был внесён депозит."
-                      style={{ marginBottom: 8 }}
-                    />
+                {isStaff
+                  && (statusName === 'Completed' || statusName === 'Cancelled')
+                  && !rental.depositRefundedAt
+                  && (rental.depositAmount ?? 0) > 0 && (
                     <Button
                       block
                       icon={<RollbackOutlined />}
-                      loading={refundMutation.isPending}
+                      style={{ marginTop: 12 }}
+                      loading={markDepositRefundedMutation.isPending}
                       onClick={() => {
+                        let noteValue = '';
                         Modal.confirm({
                           title: 'Вернуть депозит?',
-                          content: `Будет возвращено ${(rental.depositAmount ?? 0).toFixed(2)} Br на карту, с которой был внесён депозит. Действие необратимо.`,
-                          okText: 'Вернуть',
+                          content: (
+                            <div>
+                              <div style={{ marginBottom: 12 }}>
+                                Будет возвращено <b>{(rental.depositAmount ?? 0).toFixed(2)} Br</b>.
+                                Реальная интеграция с платёжным провайдером пока не подключена (заглушка).
+                              </div>
+                              <Input.TextArea
+                                rows={3}
+                                placeholder="Комментарий (опционально)"
+                                onChange={(e) => { noteValue = e.target.value; }}
+                              />
+                            </div>
+                          ),
+                          okText: 'Подтвердить',
                           okType: 'primary',
                           okButtonProps: { style: { background: '#22c55e', borderColor: '#22c55e' } },
                           cancelText: 'Отмена',
-                          onOk: () => refundMutation.mutate(),
+                          onOk: () => markDepositRefundedMutation.mutate({ note: noteValue || null }),
                         });
                       }}
                     >
                       Вернуть депозит {(rental.depositAmount ?? 0).toFixed(2)} Br
                     </Button>
-                  </>
-                )}
-
-                {!canRefundDeposit
-                  && (statusName === 'Completed' || statusName === 'Cancelled')
-                  && depositTransaction
-                  && !depositRefunded
-                  && (rental.fineOutstanding ?? 0) > 0 && (
-                    <Alert
-                      type="warning"
-                      showIcon
-                      message="Сначала погасите штраф, чтобы вернуть депозит."
-                      style={{ marginTop: 12 }}
-                    />
                   )}
 
                 <TransactionList rentalId={id!} />
@@ -986,11 +986,11 @@ export default function RentalDetailPage() {
           layout="vertical"
           style={{ marginTop: 16 }}
         >
-          {(rental.fineOutstanding ?? 0) > 0 && (
+          {outstandingFines > 0 && (
             <Alert
               type="error"
               showIcon
-              message={`Непогашенный штраф: ${(rental.fineOutstanding ?? 0).toFixed(2)} Br`}
+              message={`Непогашенный штраф: ${outstandingFines.toFixed(2)} Br`}
               description="Сначала оплатите штраф, чтобы продлить аренду."
               style={{ marginBottom: 12 }}
             />

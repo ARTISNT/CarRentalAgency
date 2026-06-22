@@ -14,12 +14,13 @@ public class GetRentalQueryHandler(
 {
     public async Task<RentalResponse> Handle(GetRentalQuery request, CancellationToken cancellationToken)
     {
-        var rental = await rentalRepository.GetRentalAsync(request.Id) ?? 
+        var rental = await rentalRepository.GetRentalAsync(request.Id) ??
                      throw new KeyNotFoundException($"Rental with id {request.Id} not found");
 
         authorizationService.EnsureCanViewRentals(rental.CarRenterId);
-        
+
         var response = mapper.Map<RentalResponse>(rental);
+
         var payment = await paymentRepository.GetPaymentByRentIdAsync(rental.Id, cancellationToken);
         if (payment != null)
         {
@@ -30,6 +31,9 @@ public class GetRentalQueryHandler(
             response.RemainingAmount = payment.RemainingAmount.Amount;
             response.PaymentStatus = payment.Status.Name;
         }
+        response.FineOutstanding = await paymentRepository.GetOutstandingFinesForRenterAsync(
+            rental.CarRenterId, cancellationToken);
+        response.DepositRefundedAt = rental.DepositRefundedAt;
         return response;
     }
 }

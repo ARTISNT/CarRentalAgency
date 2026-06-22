@@ -18,7 +18,7 @@ import {
 } from 'antd';
 import type { TablePaginationConfig } from 'antd';
 import type { FilterValue, SorterResult } from 'antd/es/table/interface';
-import { CloseCircleOutlined, EyeOutlined, RollbackOutlined, CarOutlined } from '@ant-design/icons';
+import { CloseCircleOutlined, EyeOutlined, RollbackOutlined, CarOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { rentalApi, userApi } from '../../api/endpoints';
 import { useAuthStore } from '../../stores/authStore';
 import type { EndRentalRequest, RentalListItem, RentActivityStatus } from '../../types';
@@ -93,7 +93,17 @@ export default function AdminRentalsPage() {
       message.success('Аренда отменена');
       queryClient.invalidateQueries({ queryKey: ['rentals'] });
     },
-    onError: () => message.error('Ошибка при отмене аренды'),
+    onError: () => message.error('Ошибка при отмене'),
+  });
+
+  const markDepositRefundedMutation = useMutation({
+    mutationFn: ({ id, note }: { id: string; note?: string | null }) =>
+      rentalApi.markDepositRefunded(id, note),
+    onSuccess: () => {
+      message.success('Депозит помечен как возвращённый (заглушка: реальная интеграция в разработке)');
+      queryClient.invalidateQueries({ queryKey: ['rentals'] });
+    },
+    onError: () => message.error('Не удалось пометить возврат депозита'),
   });
 
   const handleEndRental = async () => {
@@ -266,6 +276,14 @@ export default function AdminRentalsPage() {
               Заявка на возврат
             </Tag>
           )}
+          {record.depositRefundedAt && (
+            <Tag
+              icon={<CheckCircleOutlined />}
+              style={{ backgroundColor: '#22c55e', color: '#fff', border: 'none' }}
+            >
+              Депозит возвращён
+            </Tag>
+          )}
         </Space>
       ),
     },
@@ -324,6 +342,39 @@ export default function AdminRentalsPage() {
               Отменить
             </Button>
           )}
+          {(record.activityStatus.name === 'Completed' || record.activityStatus.name === 'Cancelled')
+            && !record.depositRefundedAt
+            && hasPermission('EditRent') && (
+              <Button
+                type="link"
+                icon={<CheckCircleOutlined />}
+                style={{ color: '#22c55e' }}
+                loading={markDepositRefundedMutation.isPending && markDepositRefundedMutation.variables?.id === record.id}
+                onClick={() => {
+                  let noteValue = '';
+                  Modal.confirm({
+                    title: 'Отметить возврат депозита?',
+                    content: (
+                      <div>
+                        <div style={{ marginBottom: 12 }}>
+                          Будет создана отметка о ручном возврате депозита. Реальная интеграция с платёжным провайдером пока не подключена (заглушка).
+                        </div>
+                        <Input.TextArea
+                          rows={3}
+                          placeholder="Комментарий (опционально)"
+                          onChange={(e) => { noteValue = e.target.value; }}
+                        />
+                      </div>
+                    ),
+                    okText: 'Подтвердить',
+                    cancelText: 'Отмена',
+                    onOk: () => markDepositRefundedMutation.mutate({ id: record.id, note: noteValue || null }),
+                  });
+                }}
+              >
+                Отметить возврат депозита
+              </Button>
+            )}
         </Space>
       ),
     },

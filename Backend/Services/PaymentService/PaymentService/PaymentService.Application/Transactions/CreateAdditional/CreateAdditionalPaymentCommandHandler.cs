@@ -25,6 +25,15 @@ namespace PaymentService.Application.Transactions.CreateAdditional
             if (request.Amount <= 0)
                 throw new ArgumentException("Amount must be positive");
 
+            var pendingAdditionals = await _unitOfWork.Transactions.GetPendingByRentalIdAndTypesAsync(
+                request.RentalId, new[] { PaymentType.Additional });
+
+            if (pendingAdditionals.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    "Доплата по продлению уже инициирована. Дождитесь завершения или отмените предыдущую попытку.");
+            }
+
             var rental = await _rentalClient.GetRentalByIdAsync(request.RentalId);
 
             if (rental.ActivityStatus != "Active" && rental.ActivityStatus != "Completed")

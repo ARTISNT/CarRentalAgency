@@ -87,7 +87,8 @@ public class EndRentalCommandHandler(
                 fine,
                 string.IsNullOrWhiteSpace(request.DamageDescription)
                     ? "Penalty"
-                    : request.DamageDescription);
+                    : request.DamageDescription,
+                rental.Id);
         }
 
         await paymentRepository.UpdatePaymentAsync(payment, cancellationToken);

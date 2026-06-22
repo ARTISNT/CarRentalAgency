@@ -237,10 +237,14 @@ public class Payment : Entity, IAggregateRoot
 
     public Guid AddFine(
         Money amount,
-        string reason)
+        string reason,
+        Guid rentalId)
     {
         if (amount.Amount <= 0)
             throw new ArgumentException("Fine amount must be positive");
+
+        if (rentalId == Guid.Empty)
+            throw new ArgumentException("Rental id required");
 
         EnsureSameCurrency(amount);
 
@@ -263,7 +267,7 @@ public class Payment : Entity, IAggregateRoot
             amount,
             PaymentType.Fine,
             PaymentMethod.System,
-            $"fine-{Guid.NewGuid()}",
+            $"fine-pending-{rentalId:D}",
             reason);
 
         _transactions.Add(transaction);

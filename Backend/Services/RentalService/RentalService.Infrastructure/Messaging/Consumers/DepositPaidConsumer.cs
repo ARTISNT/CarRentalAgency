@@ -18,6 +18,14 @@ public class DepositPaidConsumer(
     {
         var msg = context.Message;
 
+        if (msg.PaymentTypeName == "Fine")
+        {
+            logger.LogInformation(
+                "Skipping Fine payment in DepositPaidConsumer for Rental {RentalId}: handled by FinePaidConsumer",
+                msg.RentalId);
+            return;
+        }
+
         var rental = await rentalRepository.GetRentalAsync(msg.RentalId, context.CancellationToken);
         if (rental is null)
         {

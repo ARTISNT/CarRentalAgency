@@ -23,4 +23,6 @@ public class RentalListResponseDto
     public RentActivityStatus ActivityStatus { get; set; }
 
     public decimal TotalCost { get; set; }
+
+    public DateTime? DepositRefundedAt { get; set; }
 }

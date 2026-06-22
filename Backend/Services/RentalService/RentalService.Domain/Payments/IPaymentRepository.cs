@@ -7,4 +7,9 @@ public interface IPaymentRepository
     public Task<Dictionary<Guid, Payment>> GetPaymentsByRentIdsAsync(IEnumerable<Guid> rentalIds, CancellationToken cancellationToken = default);
     public Task AddPaymentAsync(Payment payment, CancellationToken cancellationToken = default);
     public Task UpdatePaymentAsync(Payment payment, CancellationToken cancellationToken = default);
+    public Task<decimal> GetOutstandingFinesForRenterAsync(Guid renterId, CancellationToken cancellationToken = default);
+    public Task MarkPaymentTransactionCompletedAsync(
+        Guid paymentId,
+        string externalTransactionId,
+        CancellationToken cancellationToken = default);
 }

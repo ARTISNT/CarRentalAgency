@@ -1,3 +1,5 @@
+using System.Data;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using RentalService.Domain.Payments;
@@ -116,5 +118,72 @@ VALUES
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task MarkPaymentTransactionCompletedAsync(
+        Guid paymentId,
+        string externalTransactionId,
+        CancellationToken cancellationToken = default)
+    {
+        var transaction = await dbContext.PaymentTransactions
+            .FirstOrDefaultAsync(t =>
+                EF.Property<Guid>(t, "PaymentId") == paymentId
+                && t.ExternalTransactionId == externalTransactionId,
+                cancellationToken);
+
+        if (transaction is null)
+            return;
+
+        if (transaction.Status == TransactionStatus.Completed
+            || transaction.Status == TransactionStatus.Failed)
+        {
+            return;
+        }
+
+        transaction.MarkCompleted();
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<decimal> GetOutstandingFinesForRenterAsync(Guid renterId, CancellationToken cancellationToken = default)
+    {
+        const string sql = @"
+SELECT COALESCE(SUM(pt.amount), 0)
+FROM payment_transactions pt
+INNER JOIN payments p ON pt.PaymentId = p.Id
+INNER JOIN Rentals r ON p.RentalId = r.Id
+WHERE r.CarRenterId = @renterId
+  AND pt.[Type] = N'Fine'
+  AND pt.[Status] NOT IN (N'Completed', N'Failed')
+  AND pt.ExternalTransactionId LIKE N'fine-%'";
+
+        var connection = dbContext.Database.GetDbConnection();
+        var wasOpen = connection.State == ConnectionState.Open;
+        if (!wasOpen)
+        {
+            await connection.OpenAsync(cancellationToken);
+        }
+
+        try
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText = sql;
+            var param = command.CreateParameter();
+            param.ParameterName = "@renterId";
+            param.Value = renterId;
+            command.Parameters.Add(param);
+
+            var result = await command.ExecuteScalarAsync(cancellationToken);
+            if (result is null or DBNull)
+                return 0m;
+            return Convert.ToDecimal(result);
+        }
+        finally
+        {
+            if (!wasOpen)
+            {
+                await connection.CloseAsync();
+            }
+        }
     }
 }

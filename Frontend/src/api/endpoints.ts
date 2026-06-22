@@ -170,6 +170,14 @@ export const rentalApi = {
 
   cancel: (id: string, data?: CancelRentalRequest) =>
     apiClient.put(`/Rental/CancelRental/${id}`, data).then((r) => r.data),
+
+  markDepositRefunded: (id: string, note?: string | null) =>
+    apiClient.put(`/Rental/MarkDepositRefunded/${id}`, { note: note ?? null }).then((r) => r.data),
+
+  getOutstandingFines: (userId: string) =>
+    apiClient
+      .get<{ outstandingFines: number }>(`/Rental/OutstandingFines/${userId}`)
+      .then((r) => r.data),
 };
 
 // ========== Contracts ==========

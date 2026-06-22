@@ -7,8 +7,10 @@ using RentalService.Application.Features.Rentals.CalculateEstimatedRentalPrice;
 using RentalService.Application.Features.Rentals.CancelRental;
 using RentalService.Application.Features.Rentals.CreateRental;
 using RentalService.Application.Features.Rentals.EndRental;
+using RentalService.Application.Features.Rentals.GetOutstandingFines;
 using RentalService.Application.Features.Rentals.GetRental;
 using RentalService.Application.Features.Rentals.GetRentals;
+using RentalService.Application.Features.Rentals.MarkDepositRefunded;
 using RentalService.Application.Features.Rentals.PreviewFinalCost;
 using RentalService.Application.Features.Rentals.RenewRental;
 using RentalService.Application.Features.Rentals.RequestReturnRental;
@@ -108,5 +110,25 @@ public class RentalController(ISender sender) : ControllerBase
     {
         await sender.Send(new CancelRentalCommand(id, DateTime.UtcNow));
         return Ok();
+    }
+
+    [HttpPut]
+    [Route("MarkDepositRefunded/{id}")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.EditRent)]
+    public async Task<IActionResult> MarkDepositRefunded(
+        [FromRoute] Guid id,
+        [FromBody] MarkDepositRefundedRequest? request)
+    {
+        await sender.Send(new MarkDepositRefundedCommand(id, request?.Note));
+        return Ok();
+    }
+
+    [HttpGet]
+    [Route("OutstandingFines/{userId}")]
+    [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.ViewRents)]
+    public async Task<IActionResult> GetOutstandingFines([FromRoute] Guid userId)
+    {
+        var result = await sender.Send(new GetOutstandingFinesQuery(userId));
+        return Ok(result);
     }
 }

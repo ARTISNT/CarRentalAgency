@@ -150,6 +150,7 @@ builder.Services.AddMassTransit(busConfigurator =>
     busConfigurator.AddConsumer<ContractSignedConsumer>();
     busConfigurator.AddConsumer<DepositPaidConsumer>();
     busConfigurator.AddConsumer<ContractCreationFaultConsumer>();
+    busConfigurator.AddConsumer<FinePaidConsumer>();
 
     busConfigurator.UsingRabbitMq((context, configurator)=>
     {
@@ -182,6 +183,10 @@ builder.Services.AddMassTransit(busConfigurator =>
         configurator.ReceiveEndpoint("rental-service-contract-creation-fault", e =>
         {
             e.ConfigureConsumer<ContractCreationFaultConsumer>(context);
+        });
+        configurator.ReceiveEndpoint("rental-service-fine-paid", e =>
+        {
+            e.ConfigureConsumer<FinePaidConsumer>(context);
         });
 
         configurator.ConfigureEndpoints(context);
@@ -222,6 +227,17 @@ app.Use(async (context, next) =>
         {
             error = "PassportRequired",
             message = ex.Message
+        });
+    }
+    catch (UnpaidFineException ex)
+    {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = "UnpaidFine",
+            message = ex.Message,
+            outstandingAmount = ex.OutstandingAmount
         });
     }
     catch (ForbiddenException)
