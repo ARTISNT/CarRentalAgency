@@ -30,6 +30,8 @@ public class GetRentalQueryHandler(
             response.RequiredAmount = payment.RequiredAmount.Amount;
             response.RemainingAmount = payment.RemainingAmount.Amount;
             response.PaymentStatus = payment.Status.Name;
+            response.Overpayment = payment.Overpayment.Amount;
+            response.DepositRefund = payment.DepositAmount.Amount;
         }
         response.FineOutstanding = await paymentRepository.GetOutstandingFinesForRenterAsync(
             rental.CarRenterId, cancellationToken);

@@ -24,6 +24,10 @@ public class RentalResponse
 
     public decimal FineOutstanding { get; set; }
 
+    public decimal Overpayment { get; set; }
+
+    public decimal DepositRefund { get; set; }
+
     public Guid CarRenterId { get; set; }
 
     public RentalCarResponse Car { get; set; } = null!;

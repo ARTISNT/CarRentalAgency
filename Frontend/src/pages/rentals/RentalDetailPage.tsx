@@ -232,6 +232,16 @@ export default function RentalDetailPage() {
     staleTime: 0,
   });
 
+  const [isRequestReturnModalOpen, setIsRequestReturnModalOpen] = useState(false);
+  const [requestReturnDate, setRequestReturnDate] = useState<dayjs.Dayjs | null>(null);
+
+  const requestReturnPreviewQuery = useQuery({
+    queryKey: ['previewFinalCost', 'requestReturn', id, requestReturnDate?.toISOString()],
+    queryFn: () => rentalApi.previewFinalCost(id!, requestReturnDate!.toDate().toISOString()),
+    enabled: !!id && !!requestReturnDate && isRequestReturnModalOpen,
+    staleTime: 0,
+  });
+
   const handleEndRental = async () => {
     const values = await endForm.validateFields();
     endMutation.mutate({
@@ -447,6 +457,7 @@ export default function RentalDetailPage() {
                           }
                           onClick={() => {
                             endForm.resetFields();
+                            setEndReturnDate(dayjs());
                             setIsEndModalOpen(true);
                           }}
                         >
@@ -460,34 +471,8 @@ export default function RentalDetailPage() {
                            icon={<RollbackOutlined />}
                            loading={requestReturnMutation.isPending}
                            onClick={() => {
-                             Modal.confirm({
-                               title: 'Вернуть авто?',
-                               content: (
-                                 <Space direction="vertical" size={8}>
-                                   <span>Менеджер свяжется с вами для проверки авто. После этого аренда будет завершена.</span>
-                                   {previewFinalCostQuery.data && previewFinalCostQuery.data.diff < 0 && (
-                                     <span>
-                                       К возврату: <b>{(-previewFinalCostQuery.data.diff).toFixed(2)} {previewFinalCostQuery.data.currency}</b>
-                                     </span>
-                                   )}
-                                   {previewFinalCostQuery.data && previewFinalCostQuery.data.diff >= 0 && (
-                                     <span>
-                                       Доплата: <b>{previewFinalCostQuery.data.diff.toFixed(2)} {previewFinalCostQuery.data.currency}</b>
-                                     </span>
-                                   )}
-                                   <Alert
-                                     type="warning"
-                                     showIcon
-                                     message="Если вы не вернёте машину в указанный срок, будут начисляться штрафы за просрочку."
-                                   />
-                                 </Space>
-                               ),
-                               okText: 'Отправить заявку',
-                               okType: 'primary',
-                               okButtonProps: { style: { background: '#22c55e', borderColor: '#22c55e' } },
-                               cancelText: 'Отмена',
-                               onOk: () => requestReturnMutation.mutate(),
-                             });
+                             setRequestReturnDate(dayjs());
+                             setIsRequestReturnModalOpen(true);
                            }}
                         >
                           Вернуть авто
@@ -882,6 +867,45 @@ export default function RentalDetailPage() {
       </Row>
 
       <Modal
+        title="Вернуть авто?"
+        open={isRequestReturnModalOpen}
+        onCancel={() => setIsRequestReturnModalOpen(false)}
+        onOk={() => {
+          setIsRequestReturnModalOpen(false);
+          requestReturnMutation.mutate();
+        }}
+        confirmLoading={requestReturnMutation.isPending}
+        okText="Отправить заявку"
+        okButtonProps={{ style: { background: '#22c55e', borderColor: '#22c55e' } }}
+        cancelText="Отмена"
+      >
+        <Space direction="vertical" size={8} style={{ marginTop: 8 }}>
+          <span>Менеджер свяжется с вами для проверки авто. После этого аренда будет завершена.</span>
+          {requestReturnPreviewQuery.isLoading && <Spin size="small" />}
+          {requestReturnPreviewQuery.data && requestReturnPreviewQuery.data.refundAmount > 0 && (
+            <span>
+              К возврату (с учётом депозита): <b>{requestReturnPreviewQuery.data.refundAmount.toFixed(2)} {requestReturnPreviewQuery.data.currency}</b>
+            </span>
+          )}
+          {requestReturnPreviewQuery.data && requestReturnPreviewQuery.data.diff > 0 && (
+            <span>
+              Доплата: <b>{requestReturnPreviewQuery.data.diff.toFixed(2)} {requestReturnPreviewQuery.data.currency}</b>
+            </span>
+          )}
+          {requestReturnPreviewQuery.data && requestReturnPreviewQuery.data.diff === 0 && (
+            <span>
+              Стоимость совпадает с предоплатой. К возврату депозит: <b>{requestReturnPreviewQuery.data.depositAmount.toFixed(2)} {requestReturnPreviewQuery.data.currency}</b>
+            </span>
+          )}
+          <Alert
+            type="warning"
+            showIcon
+            message="Если вы не вернёте машину в указанный срок, будут начисляться штрафы за просрочку."
+          />
+        </Space>
+      </Modal>
+
+      <Modal
         title="Завершение аренды"
         open={isEndModalOpen}
         onCancel={() => setIsEndModalOpen(false)}
@@ -926,13 +950,13 @@ export default function RentalDetailPage() {
               style={{ marginBottom: 12 }}
               message={
                 previewFinalCostQuery.data.diff > 0
-                  ? `Доплата: ${previewFinalCostQuery.data.diff.toFixed(2)} ${previewFinalCostQuery.data.currency}`
-                  : previewFinalCostQuery.data.diff < 0
-                    ? `Будет возвращено: ${(-previewFinalCostQuery.data.diff).toFixed(2)} ${previewFinalCostQuery.data.currency} (включая депозит и переплату)`
+                  ? `К доплате: ${previewFinalCostQuery.data.diff.toFixed(2)} ${previewFinalCostQuery.data.currency}`
+                  : previewFinalCostQuery.data.refundAmount > 0
+                    ? `К возврату клиенту: ${previewFinalCostQuery.data.refundAmount.toFixed(2)} ${previewFinalCostQuery.data.currency} (включая депозит и переплату)`
                     : 'Стоимость совпадает с предоплатой'
               }
               description={
-                previewFinalCostQuery.data.diff < 0
+                previewFinalCostQuery.data.refundAmount > 0
                   ? `Деньги поступят на карту, с которой производилась оплата, в течение 3-5 рабочих дней.`
                   : `Предварительная стоимость: ${previewFinalCostQuery.data.finalCost.toFixed(2)} ${previewFinalCostQuery.data.currency} (оценка: ${previewFinalCostQuery.data.estimated.toFixed(2)})`
               }

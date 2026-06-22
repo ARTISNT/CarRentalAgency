@@ -24,5 +24,7 @@ public class RentalListResponseDto
 
     public decimal TotalCost { get; set; }
 
+    public decimal Overpayment { get; set; }
+
     public DateTime? DepositRefundedAt { get; set; }
 }

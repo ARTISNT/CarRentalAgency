@@ -191,6 +191,8 @@ export interface RentalResponse {
   paymentStatus: string;
   fineOutstanding?: number;
   additionalOutstanding?: number;
+  overpayment?: number;
+  depositRefund?: number;
 }
 
 export interface RentalListItem {
@@ -206,6 +208,7 @@ export interface RentalListItem {
   returnDate: string | null;
   returnRequestedAtUtc: string | null;
   depositRefundedAt: string | null;
+  overpayment?: number;
 }
 
 export interface CreateRentalRequest {
@@ -244,6 +247,8 @@ export interface PreviewFinalCostResponse {
   finalCost: number;
   estimated: number;
   diff: number;
+  depositAmount: number;
+  refundAmount: number;
   currency: string;
 }
 

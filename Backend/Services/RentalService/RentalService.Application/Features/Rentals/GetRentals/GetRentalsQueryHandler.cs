@@ -29,7 +29,10 @@ public class GetRentalsQueryHandler(
         foreach (var dto in responses)
         {
             if (payments.TryGetValue(dto.Id, out var payment))
+            {
                 dto.TotalCost = payment.EstimatedAmount.Amount;
+                dto.Overpayment = payment.Overpayment.Amount;
+            }
             if (rentalsById.TryGetValue(dto.Id, out var rental))
                 dto.DepositRefundedAt = rental.DepositRefundedAt;
         }

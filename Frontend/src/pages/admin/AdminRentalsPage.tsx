@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  Alert,
   Button,
   DatePicker,
   Form,
@@ -57,6 +58,14 @@ export default function AdminRentalsPage() {
   const [isEndModalOpen, setIsEndModalOpen] = useState(false);
   const [endRentalId, setEndRentalId] = useState<string | null>(null);
   const [endForm] = Form.useForm();
+  const [endReturnDate, setEndReturnDate] = useState<Dayjs | null>(null);
+
+  const previewFinalCostQuery = useQuery({
+    queryKey: ['previewFinalCost', endRentalId, endReturnDate?.toISOString()],
+    queryFn: () => rentalApi.previewFinalCost(endRentalId!, endReturnDate!.toDate().toISOString()),
+    enabled: !!endRentalId && !!endReturnDate && isEndModalOpen,
+    staleTime: 0,
+  });
 
   const isStaff = hasRole(['Manager', 'Admin']);
   const canUseFilters = isStaff;
@@ -318,6 +327,7 @@ export default function AdminRentalsPage() {
               onClick={() => {
                 setEndRentalId(record.id);
                 endForm.resetFields();
+                setEndReturnDate(dayjs());
                 setIsEndModalOpen(true);
               }}
             >
@@ -494,6 +504,9 @@ export default function AdminRentalsPage() {
             penaltyAmount: 0,
             damageDescription: null,
           }}
+          onValuesChange={(_changed, all) => {
+            if ('returnDate' in all) setEndReturnDate(all.returnDate ?? null);
+          }}
         >
           <Form.Item
             name="returnDate"
@@ -506,6 +519,30 @@ export default function AdminRentalsPage() {
               disabledDate={(d) => d && d.isAfter(dayjs())}
             />
           </Form.Item>
+
+          {previewFinalCostQuery.isLoading && (
+            <div style={{ marginBottom: 12 }}><Spin size="small" /> <Text type="secondary">Расчёт суммы возврата…</Text></div>
+          )}
+
+          {previewFinalCostQuery.data && (
+            <Alert
+              type={previewFinalCostQuery.data.diff > 0 ? 'warning' : 'success'}
+              showIcon
+              style={{ marginBottom: 12 }}
+              message={
+                previewFinalCostQuery.data.diff > 0
+                  ? `К доплате: ${previewFinalCostQuery.data.diff.toFixed(2)} ${previewFinalCostQuery.data.currency}`
+                  : previewFinalCostQuery.data.refundAmount > 0
+                    ? `К возврату клиенту: ${previewFinalCostQuery.data.refundAmount.toFixed(2)} ${previewFinalCostQuery.data.currency} (включая депозит и переплату)`
+                    : 'Стоимость совпадает с предоплатой'
+              }
+              description={
+                previewFinalCostQuery.data.refundAmount > 0
+                  ? `Деньги поступат на карту клиента, с которой производилась оплата, в течение 3-5 рабочих дней.`
+                  : `Предварительная стоимость: ${previewFinalCostQuery.data.finalCost.toFixed(2)} ${previewFinalCostQuery.data.currency} (оценка: ${previewFinalCostQuery.data.estimated.toFixed(2)})`
+              }
+            />
+          )}
 
           <Form.Item
             name="mileage"

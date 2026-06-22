@@ -1,6 +1,7 @@
 using MediatR;
 using RentalService.Application.Authorization;
 using RentalService.Application.Common;
+using RentalService.Domain.Payments;
 using RentalService.Domain.Rentals;
 using RentalService.Domain.Services;
 
@@ -10,6 +11,7 @@ public class PreviewFinalCostQueryHandler(
     IRentalRepository rentalRepository,
     IPricingPoliciesFactory pricingPoliciesFactory,
     RentalPricingDomainService rentalPricingDomainService,
+    IPaymentRepository paymentRepository,
     IRentalAuthorizationService authorizationService)
     : IRequestHandler<PreviewFinalCostQuery, PreviewFinalCostResponse>
 {
@@ -36,10 +38,19 @@ public class PreviewFinalCostQueryHandler(
 
         var diff = finalCost.Amount - estimated.Amount;
 
+        var payment = await paymentRepository.GetPaymentByRentIdAsync(rental.Id, cancellationToken);
+        var depositAmount = payment?.DepositAmount.Amount ?? 0m;
+
+        var refundAmount = diff >= 0
+            ? Math.Max(0, depositAmount - diff)
+            : depositAmount + (-diff);
+
         return new PreviewFinalCostResponse(
             finalCost.Amount,
             estimated.Amount,
             diff,
+            depositAmount,
+            refundAmount,
             currency);
     }
 }
