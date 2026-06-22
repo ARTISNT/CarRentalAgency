@@ -32,9 +32,8 @@ public class GetRentalQueryHandler(
             response.PaymentStatus = payment.Status.Name;
             response.Overpayment = payment.Overpayment.Amount;
             response.DepositRefund = payment.DepositAmount.Amount;
+            response.FineOutstanding = payment.FineOutstanding.Amount;
         }
-        response.FineOutstanding = await paymentRepository.GetOutstandingFinesForRenterAsync(
-            rental.CarRenterId, cancellationToken);
         response.DepositRefundedAt = rental.DepositRefundedAt;
         return response;
     }

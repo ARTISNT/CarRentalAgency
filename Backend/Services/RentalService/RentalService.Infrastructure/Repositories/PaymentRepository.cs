@@ -125,22 +125,14 @@ VALUES
         string externalTransactionId,
         CancellationToken cancellationToken = default)
     {
-        var transaction = await dbContext.PaymentTransactions
-            .FirstOrDefaultAsync(t =>
-                EF.Property<Guid>(t, "PaymentId") == paymentId
-                && t.ExternalTransactionId == externalTransactionId,
-                cancellationToken);
+        var payment = await dbContext.Payments
+            .Include(p => p.Transactions)
+            .FirstOrDefaultAsync(p => p.Id == paymentId, cancellationToken);
 
-        if (transaction is null)
+        if (payment is null)
             return;
 
-        if (transaction.Status == TransactionStatus.Completed
-            || transaction.Status == TransactionStatus.Failed)
-        {
-            return;
-        }
-
-        transaction.MarkCompleted();
+        payment.MarkTransactionCompleted(externalTransactionId, DateTime.UtcNow);
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }
