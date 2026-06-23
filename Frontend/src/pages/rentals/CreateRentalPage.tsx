@@ -106,14 +106,17 @@ export default function CreateRentalPage() {
   };
 
   const createMutation = useMutation({
-    mutationFn: () =>
-      rentalApi.create({
+    mutationFn: () => {
+      const start = dates[0]!.minute(0).second(0).millisecond(0).toDate();
+      const end = dates[1]!.minute(0).second(0).millisecond(0).toDate();
+      return rentalApi.create({
         userId: user!.id,
         carId: carId!,
-        startDate: dates[0]!.toISOString(),
-        endDate: dates[1]!.toISOString(),
+        startDate: start.toISOString(),
+        endDate: end.toISOString(),
         promoCode: promoCode || null,
-      }),
+      });
+    },
     onSuccess: (data: { rentalId: string }) => {
       message.success('Аренда создана!');
       queryClient.invalidateQueries({ queryKey: ['rentals'] });
@@ -273,10 +276,16 @@ export default function CreateRentalPage() {
                   <RangePicker
                     size="large"
                     style={{ width: '100%' }}
-                    showTime
+                    showTime={{ format: 'HH:mm', defaultValue: [dayjs().startOf('hour'), dayjs().startOf('hour')] }}
                     format="DD.MM.YYYY HH:mm"
                     disabledDate={(d) => d.isBefore(dayjs(), 'day')}
-                    onChange={(v) => setDates(v || [null, null])}
+                    onChange={(v) => {
+                      const [start, end] = v || [null, null];
+                      setDates([
+                        start ? start.minute(0).second(0).millisecond(0) : null,
+                        end ? end.minute(0).second(0).millisecond(0) : null,
+                      ]);
+                    }}
                     bordered={false}
                     variant="filled"
                   />

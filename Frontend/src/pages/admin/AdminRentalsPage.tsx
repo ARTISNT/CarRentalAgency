@@ -62,7 +62,9 @@ export default function AdminRentalsPage() {
 
   const previewFinalCostQuery = useQuery({
     queryKey: ['previewFinalCost', endRentalId, endReturnDate?.toISOString()],
-    queryFn: () => rentalApi.previewFinalCost(endRentalId!, endReturnDate!.toDate().toISOString()),
+    queryFn: () => rentalApi.previewFinalCost(
+      endRentalId!,
+      endReturnDate!.minute(0).second(0).millisecond(0).toDate().toISOString()),
     enabled: !!endRentalId && !!endReturnDate && isEndModalOpen,
     staleTime: 0,
   });
@@ -117,10 +119,11 @@ export default function AdminRentalsPage() {
 
   const handleEndRental = async () => {
     const values = await endForm.validateFields();
+    const returnDate = values.returnDate.minute(0).second(0).millisecond(0).toDate();
     endMutation.mutate({
       id: endRentalId!,
       data: {
-        returnDate: values.returnDate.toISOString(),
+        returnDate: returnDate.toISOString(),
         mileage: values.mileage,
         fuelLevel: values.fuelLevel / 100,
         penaltyAmount: values.penaltyAmount || 0,
@@ -514,9 +517,16 @@ export default function AdminRentalsPage() {
             rules={[{ required: true, message: 'Укажите дату возврата' }]}
           >
             <DatePicker
-              showTime
+              showTime={{ format: 'HH:mm', defaultValue: dayjs().startOf('hour') }}
+              format="DD.MM.YYYY HH:mm"
               style={{ width: '100%' }}
               disabledDate={(d) => d && d.isAfter(dayjs())}
+              onChange={(v) => {
+                if (v) {
+                  endForm.setFieldValue('returnDate', v.minute(0).second(0).millisecond(0));
+                  setEndReturnDate(v.minute(0).second(0).millisecond(0));
+                }
+              }}
             />
           </Form.Item>
 

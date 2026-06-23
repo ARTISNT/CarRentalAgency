@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using RentalService.Api.BackgroundServices;
+using RentalService.Api.Common;
 using RentalService.Api.OpenApiConfiguration;
 using RentalService.Api.Requests;
 using RentalService.Application.Abstractions;
@@ -44,7 +45,11 @@ builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
 });
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
+    });
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddDbContext<RentalServiceContext>(options => 
