@@ -1,4 +1,5 @@
 using System.Text;
+using Api.Common;
 using ContractService.Application.Abstractions.External;
 using ContractService.Application.Abstractions.Security;
 using ContractService.Application.Abstractions.Services;
@@ -229,5 +230,6 @@ app.Use(async (context, next) =>
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.UseCommonExceptionHandler();
 app.UseHttpsRedirection();
 app.Run();

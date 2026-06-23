@@ -1,10 +1,13 @@
 using System.Text;
+using Api.Common;
 using CarService.Application.Abstractions.Security;
 using CarService.Application.Authorization;
 using CarService.Application.Common;
 using CarService.Application.Features.GetCars;
 using CarService.Domain.Cars;
+using CarService.Domain.Common;
 using CarService.Infrastructure;
+using CarService.Infrastructure.Extensions;
 using CarService.Infrastructure.Messaging.Consumers;
 using CarService.Infrastructure.Persistence.Repositories;
 using CarService.Infrastructure.Security;
@@ -119,22 +122,27 @@ builder.Services.AddMassTransit(busConfigurator =>
 
         configurator.ReceiveEndpoint("car-service-contract-ended", e =>
         {
+            e.UseMessageRetry(r => r.Exponential(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(3)));
             e.ConfigureConsumer<ContractEndedConsumer>(context);
         });
         configurator.ReceiveEndpoint("car-service-rental-started", e =>
         {
+            e.UseMessageRetry(r => r.Exponential(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(3)));
             e.ConfigureConsumer<RentalStartedConsumer>(context);
         });
         configurator.ReceiveEndpoint("car-service-rental-scheduled", e =>
         {
+            e.UseMessageRetry(r => r.Exponential(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(3)));
             e.ConfigureConsumer<RentalScheduledConsumer>(context);
         });
         configurator.ReceiveEndpoint("car-service-rental-cancelled", e =>
         {
+            e.UseMessageRetry(r => r.Exponential(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(3)));
             e.ConfigureConsumer<RentalCancelledConsumer>(context);
         });
         configurator.ReceiveEndpoint("car-service-rental-ended", e =>
         {
+            e.UseMessageRetry(r => r.Exponential(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(3)));
             e.ConfigureConsumer<RentalEndedConsumer>(context);
         });
 
@@ -172,6 +180,8 @@ app.Use(async (context, next) =>
         await context.Response.WriteAsJsonAsync(new { error = "account_deactivated" });
     }
 });
+
+app.UseCommonExceptionHandler();
 
 app.UseAuthentication();
 app.UseAuthorization();
