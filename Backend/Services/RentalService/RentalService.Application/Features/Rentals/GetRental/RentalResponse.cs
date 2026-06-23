@@ -24,9 +24,14 @@ public class RentalResponse
 
     public decimal FineOutstanding { get; set; }
 
+    public decimal AdditionalOutstanding { get; set; }
+
     public decimal Overpayment { get; set; }
 
     public decimal DepositRefund { get; set; }
+
+    public DateTime? CancelledAtUtc { get; set; }
+    public string? CancellationReason { get; set; }
 
     public Guid CarRenterId { get; set; }
 

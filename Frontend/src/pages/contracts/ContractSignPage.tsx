@@ -24,7 +24,7 @@ import SignatureCanvas from 'react-signature-canvas';
 import dayjs from 'dayjs';
 import { contractApi } from '../../api/endpoints';
 import apiClient from '../../api/client';
-import type { ContractResponse, ContractStatus } from '../../types';
+import type { ContractStatus } from '../../types';
 
 const { Title, Text } = Typography;
 

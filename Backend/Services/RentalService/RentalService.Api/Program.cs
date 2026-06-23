@@ -1,4 +1,5 @@
 using System.Text;
+using Api.Common;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -258,6 +259,8 @@ app.Use(async (context, next) =>
         await context.Response.WriteAsJsonAsync(new { error = "account_deactivated" });
     }
 });
+
+app.UseCommonExceptionHandler();
 
 app.UseAuthentication();
 app.UseAuthorization();

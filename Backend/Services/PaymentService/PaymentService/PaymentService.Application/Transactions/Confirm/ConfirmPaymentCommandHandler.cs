@@ -41,14 +41,14 @@ public class ConfirmPaymentCommandHandler(
                 logger.LogInformation("Publishing DepositPaidIntegrationEvent for Rental {RentalId}, Type: {Type}, Amount: {Amount}",
                     transaction.RentalId, transaction.PaymentType.Name, transaction.Amount);
                 await publishEndpoint.Publish(new DepositPaidIntegrationEvent(
-                    transaction.RentalId, DateTime.UtcNow, transaction.PaymentType.Name, transaction.Amount), cancellationToken);
+                    transaction.RentalId, DateTime.UtcNow, transaction.PaymentType.Name, transaction.Amount, transaction.Id), cancellationToken);
                 break;
 
             case var _ when transaction.PaymentType == PaymentType.Fine:
                 logger.LogInformation("Publishing DepositPaidIntegrationEvent for Fine on Rental {RentalId}, Amount: {Amount}",
                     transaction.RentalId, transaction.Amount);
                 await publishEndpoint.Publish(new DepositPaidIntegrationEvent(
-                    transaction.RentalId, DateTime.UtcNow, PaymentType.Fine.Name, transaction.Amount), cancellationToken);
+                    transaction.RentalId, DateTime.UtcNow, PaymentType.Fine.Name, transaction.Amount, transaction.Id), cancellationToken);
                 await publishEndpoint.Publish(new FinePaidIntegrationEvent(
                     transaction.RentalId, transaction.Id, transaction.Amount, DateTime.UtcNow), cancellationToken);
                 break;
@@ -57,7 +57,7 @@ public class ConfirmPaymentCommandHandler(
                 logger.LogInformation("Publishing DepositPaidIntegrationEvent for Additional on Rental {RentalId}, Amount: {Amount}",
                     transaction.RentalId, transaction.Amount);
                 await publishEndpoint.Publish(new DepositPaidIntegrationEvent(
-                    transaction.RentalId, DateTime.UtcNow, PaymentType.Additional.Name, transaction.Amount), cancellationToken);
+                    transaction.RentalId, DateTime.UtcNow, PaymentType.Additional.Name, transaction.Amount, transaction.Id), cancellationToken);
                 await publishEndpoint.Publish(new AdditionalPaidIntegrationEvent(
                     transaction.RentalId, transaction.Id, transaction.Amount, DateTime.UtcNow), cancellationToken);
                 break;

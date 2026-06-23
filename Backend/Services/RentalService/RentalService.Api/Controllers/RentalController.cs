@@ -106,9 +106,10 @@ public class RentalController(ISender sender) : ControllerBase
     [HttpPut]
     [Route("CancelRental/{id}")]
     [Authorize(AuthenticationSchemes = "UserAuth", Policy = Permissions.EditRent)]
-    public async Task<IActionResult> CancelRental([FromRoute] Guid id, [FromBody]  CancelRentalRequest cancelRentalRequest)
+    public async Task<IActionResult> CancelRental([FromRoute] Guid id, [FromBody] CancelRentalRequest? cancelRentalRequest)
     {
-        await sender.Send(new CancelRentalCommand(id, DateTime.UtcNow));
+        var reason = cancelRentalRequest?.Reason;
+        await sender.Send(new CancelRentalCommand(id, DateTime.UtcNow, reason));
         return Ok();
     }
 

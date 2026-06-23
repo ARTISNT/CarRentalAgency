@@ -19,7 +19,6 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   DownloadOutlined,
-  SearchOutlined,
 } from '@ant-design/icons';
 import { contractApi } from '../../api/endpoints';
 import apiClient from '../../api/client';
@@ -158,7 +157,8 @@ export default function AdminContractsPage() {
   });
 
   const cancelMutation = useMutation({
-    mutationFn: (contractId: string) => contractApi.cancel(contractId),
+    mutationFn: ({ id, reason }: { id: string; reason: string | null }) =>
+      contractApi.cancel(id, reason),
     onSuccess: () => {
       message.success('Договор отменён');
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
@@ -215,7 +215,23 @@ export default function AdminContractsPage() {
                 Подписать
               </Button>
               <Button type="link" danger icon={<CloseCircleOutlined />}
-                onClick={() => Modal.confirm({ title: 'Отменить договор?', onOk: () => cancelMutation.mutate(record.id) })}>
+                onClick={() => {
+                  let reason = '';
+                  Modal.confirm({
+                    title: 'Отменить договор?',
+                    content: (
+                      <div>
+                        <div style={{ marginBottom: 12 }}>Укажите причину отмены (необязательно):</div>
+                        <Input.TextArea
+                          rows={3}
+                          placeholder="Причина"
+                          onChange={(e) => { reason = e.target.value; }}
+                        />
+                      </div>
+                    ),
+                    onOk: () => cancelMutation.mutate({ id: record.id, reason: reason || null }),
+                  });
+                }}>
                 Отменить
               </Button>
             </>

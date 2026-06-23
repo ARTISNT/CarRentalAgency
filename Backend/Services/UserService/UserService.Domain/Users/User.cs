@@ -31,12 +31,9 @@ public sealed class User : Entity, IAggregateRoot
 
     public void Activate()
     {
-        if(!EmailVerified)
-            throw new InvalidOperationException("User cannot be activate without email verification.");
-        
         if(IsActive)
             throw new InvalidOperationException("User is already active.");
-        
+
         IsActive = true;
         AddDomainEvent(new UserActivatedDomainEvent(Id, DateTime.UtcNow));
     }
@@ -98,7 +95,9 @@ public sealed class User : Entity, IAggregateRoot
 
         EmailVerified = true;
         VerificationToken = null;
+        IsActive = true;
         AddDomainEvent(new UserEmailVerifiedDomainEvent(Id, now));
+        AddDomainEvent(new UserActivatedDomainEvent(Id, now));
     }
 
     public void ClearExpiredEmailVerificationToken()

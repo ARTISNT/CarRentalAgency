@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Table, Tag, Typography, Spin, Button, Space, Input, Select, DatePicker, Empty, message } from 'antd';
+import { Table, Tag, Typography, Spin, Button, Space, Input, Select, DatePicker, Empty } from 'antd';
 import { EyeOutlined, PlusOutlined } from '@ant-design/icons';
 import { rentalApi } from '../../api/endpoints';
 import type { RentActivityStatus, RentalListItem } from '../../types';

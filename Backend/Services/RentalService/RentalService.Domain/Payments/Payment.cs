@@ -301,18 +301,22 @@ public class Payment : Entity, IAggregateRoot
             RecalculateStatus();
         }
 
-        var transaction = new PaymentTransaction(
+        // Не создаём phantom-транзакцию здесь. Реальная запись о платеже появится
+        // в DepositPaidConsumer, когда payment-service пришлёт DepositPaidIntegrationEvent
+        // с TransactionId. Дополнительно сохраняем системную транзакцию "теневого" учёта,
+        // которая будет закрыта по тому же TransactionId из шины.
+        var shadowTransaction = new PaymentTransaction(
             amount,
             PaymentType.Additional,
             PaymentMethod.System,
-            $"renewal-{Guid.NewGuid()}",
+            $"shadow-{Guid.NewGuid()}",
             reason);
 
-        _transactions.Add(transaction);
+        _transactions.Add(shadowTransaction);
 
         RecalculateStatus();
 
-        return transaction.Id;
+        return shadowTransaction.Id;
     }
 
     public void MarkTransactionCompleted(

@@ -24,7 +24,7 @@ public class GetRentalQueryHandler(
         var payment = await paymentRepository.GetPaymentByRentIdAsync(rental.Id, cancellationToken);
         if (payment != null)
         {
-            response.TotalCost = payment.EstimatedAmount.Amount;
+            response.TotalCost = payment.RequiredAmount.Amount;
             response.DepositAmount = payment.DepositAmount.Amount;
             response.PaidAmount = payment.PaidAmount.Amount;
             response.RequiredAmount = payment.RequiredAmount.Amount;
@@ -33,6 +33,7 @@ public class GetRentalQueryHandler(
             response.Overpayment = payment.Overpayment.Amount;
             response.DepositRefund = payment.DepositAmount.Amount;
             response.FineOutstanding = payment.FineOutstanding.Amount;
+            response.AdditionalOutstanding = payment.AdditionalOutstanding.Amount;
         }
         response.DepositRefundedAt = rental.DepositRefundedAt;
         return response;

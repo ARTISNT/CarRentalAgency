@@ -244,14 +244,14 @@ services:
       MessageBroker__Host: rabbitmq
       MessageBroker__User: ${RABBITMQ_DEFAULT_USER}
       MessageBroker__Password: ${RABBITMQ_DEFAULT_PASS}
-      Smtp__Host: ${SMTP_HOST}
-      Smtp__Port: ${SMTP_PORT}
-      Smtp__UseSsl: ${SMTP_USE_SSL}
-      Smtp__Username: ${SMTP_USERNAME}
-      Smtp__Password: ${SMTP_PASSWORD}
-      Smtp__FromAddress: ${SMTP_FROM_ADDRESS}
-      Smtp__FromName: ${SMTP_FROM_NAME}
-      Smtp__ToAddress: ${SMTP_TO_ADDRESS}
+      Smtp__Host: ${SMTP_HOST:-mailhog}
+      Smtp__Port: ${SMTP_PORT:-1025}
+      Smtp__UseSsl: ${SMTP_USE_SSL:-false}
+      Smtp__Username: ${SMTP_USERNAME:-}
+      Smtp__Password: ${SMTP_PASSWORD:-}
+      Smtp__FromAddress: ${SMTP_FROM_ADDRESS:-noreply@carrental.local}
+      Smtp__FromName: ${SMTP_FROM_NAME:-Car Rental Agency}
+      Smtp__ToAddress: ${SMTP_TO_ADDRESS:-noreply@carrental.local}
     depends_on:
       rabbitmq:
         condition: service_started

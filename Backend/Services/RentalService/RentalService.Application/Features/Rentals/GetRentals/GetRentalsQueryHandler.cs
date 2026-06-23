@@ -30,8 +30,9 @@ public class GetRentalsQueryHandler(
         {
             if (payments.TryGetValue(dto.Id, out var payment))
             {
-                dto.TotalCost = payment.EstimatedAmount.Amount;
+                dto.TotalCost = payment.RequiredAmount.Amount;
                 dto.Overpayment = payment.Overpayment.Amount;
+                dto.AdditionalOutstanding = payment.AdditionalOutstanding.Amount;
             }
             if (rentalsById.TryGetValue(dto.Id, out var rental))
                 dto.DepositRefundedAt = rental.DepositRefundedAt;

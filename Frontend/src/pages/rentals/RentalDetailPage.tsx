@@ -444,32 +444,47 @@ export default function RentalDetailPage() {
                   )}
                   <Space wrap>
                     {isStaff ? (
-                      rental.returnRequestedAtUtc && (
-                        <Button
-                          type="primary"
-                          icon={<RollbackOutlined />}
-                          style={{ background: '#22c55e', borderColor: '#22c55e' }}
-                          disabled={
-                            outstandingFines > 0
-                            || (rental.additionalOutstanding ?? 0) > 0
-                            || (rental.remainingAmount ?? 0) > 0
-                          }
-                          title={
-                            outstandingFines > 0
-                            || (rental.additionalOutstanding ?? 0) > 0
-                            || (rental.remainingAmount ?? 0) > 0
-                              ? 'Клиент должен погасить все задолженности перед завершением аренды'
-                              : undefined
-                          }
-                          onClick={() => {
-                            endForm.resetFields();
-                            setEndReturnDate(dayjs());
-                            setIsEndModalOpen(true);
-                          }}
-                        >
-                          Завершить аренду
-                        </Button>
-                      )
+                      <>
+                        {!rental.returnRequestedAtUtc && (
+                          <Button
+                            type="default"
+                            icon={<RollbackOutlined />}
+                            loading={requestReturnMutation.isPending}
+                            onClick={() => {
+                              setRequestReturnDate(dayjs());
+                              setIsRequestReturnModalOpen(true);
+                            }}
+                          >
+                            Подать заявку на возврат
+                          </Button>
+                        )}
+                        {rental.returnRequestedAtUtc && (
+                          <Button
+                            type="primary"
+                            icon={<RollbackOutlined />}
+                            style={{ background: '#22c55e', borderColor: '#22c55e' }}
+                            disabled={
+                              outstandingFines > 0
+                              || (rental.additionalOutstanding ?? 0) > 0
+                              || (rental.remainingAmount ?? 0) > 0
+                            }
+                            title={
+                              outstandingFines > 0
+                              || (rental.additionalOutstanding ?? 0) > 0
+                              || (rental.remainingAmount ?? 0) > 0
+                                ? 'Клиент должен погасить все задолженности перед завершением аренды'
+                                : undefined
+                            }
+                            onClick={() => {
+                              endForm.resetFields();
+                              setEndReturnDate(dayjs());
+                              setIsEndModalOpen(true);
+                            }}
+                          >
+                            Завершить аренду
+                          </Button>
+                        )}
+                      </>
                     ) : (
                       !rental.returnRequestedAtUtc && (
                         <Button
@@ -873,7 +888,7 @@ export default function RentalDetailPage() {
       </Row>
 
       <Modal
-        title="Вернуть авто?"
+        title={isStaff ? 'Подать заявку на возврат?' : 'Вернуть авто?'}
         open={isRequestReturnModalOpen}
         onCancel={() => setIsRequestReturnModalOpen(false)}
         onOk={() => {
@@ -886,7 +901,11 @@ export default function RentalDetailPage() {
         cancelText="Отмена"
       >
         <Space direction="vertical" size={8} style={{ marginTop: 8 }}>
-          <span>Менеджер свяжется с вами для проверки авто. После этого аренда будет завершена.</span>
+          <span>
+            {isStaff
+              ? 'Будет создана заявка на возврат. После её подачи станет доступно завершение аренды.'
+              : 'Менеджер свяжется с вами для проверки авто. После этого аренда будет завершена.'}
+          </span>
           {requestReturnPreviewQuery.isLoading && <Spin size="small" />}
           {requestReturnPreviewQuery.data && requestReturnPreviewQuery.data.refundAmount > 0 && (
             <span>

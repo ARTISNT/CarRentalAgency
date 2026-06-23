@@ -31,13 +31,12 @@ public class RentalAuthorizationPolicy(IClientContext clientContext) : IRentalAu
 
     public bool CanRequestReturn(Guid ownerId)
     {
-        if (ownerId != clientContext.ClientId)
-            return false;
+        if (ownerId == clientContext.ClientId)
+            return HasPermission(Permissions.ViewRents);
 
-        if (HasPermission(Permissions.EditRent))
-            return false;
-
-        return HasPermission(Permissions.ViewRents);
+        // staff (Manager/Admin с EditRent) может подавать заявку на возврат за любого клиента,
+        // в т.ч. за самого себя, если у аренды он выступает как renter.
+        return HasPermission(Permissions.EditRent);
     }
 
     private bool HasPermission(string permission) => clientContext.Permissions.Contains(permission);

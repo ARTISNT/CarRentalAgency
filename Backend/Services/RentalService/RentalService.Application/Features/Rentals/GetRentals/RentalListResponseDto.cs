@@ -27,4 +27,8 @@ public class RentalListResponseDto
     public decimal Overpayment { get; set; }
 
     public DateTime? DepositRefundedAt { get; set; }
+
+    public decimal AdditionalOutstanding { get; set; }
+
+    public string? CancellationReason { get; set; }
 }

@@ -36,7 +36,13 @@ namespace PaymentService.Application.Transactions.Create
                 : rental.TotalPrice;
 
             var paymentData = await _paymentGateway.CreateSessionsAsync(amount, rental.RentalId.ToString());
-            var transaction = new Transaction(amount, paymentData.Token, PaymentConstants.CardId, request.RentalId, paymentType);
+            var transaction = new Transaction(
+                amount,
+                paymentData.Token,
+                PaymentConstants.CardId,
+                request.RentalId,
+                paymentType,
+                trackingId: rental.RentalId.ToString());
 
             await _unitOfWork.Transactions.CreateAsync(transaction);
             await _unitOfWork.SaveChangesAsync();

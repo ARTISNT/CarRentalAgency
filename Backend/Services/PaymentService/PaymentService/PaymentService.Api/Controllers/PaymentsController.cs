@@ -9,6 +9,8 @@ using PaymentService.Application.Transactions.CreateRemaining;
 using PaymentService.Application.Transactions.GetByRental;
 using PaymentService.Application.Transactions.Refund;
 using PaymentService.Application.Transactions.Update;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace PaymentService.Api.Controllers
 {
@@ -17,10 +19,14 @@ namespace PaymentService.Api.Controllers
     public class PaymentsController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<PaymentsController> _logger;
 
-        public PaymentsController(IMediator mediator)
+        public PaymentsController(IMediator mediator, IConfiguration configuration, ILogger<PaymentsController> logger)
         {
             _mediator = mediator;
+            _configuration = configuration;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -97,6 +103,29 @@ namespace PaymentService.Api.Controllers
         {
             using var reader = new StreamReader(Request.Body);
             var json = await reader.ReadToEndAsync();
+
+            var webhookSecret = _configuration["BePaid:WebhookSecret"];
+            if (!string.IsNullOrEmpty(webhookSecret))
+            {
+                if (!Request.Headers.TryGetValue("X-BePaid-Signature", out var sig) || string.IsNullOrEmpty(sig))
+                {
+                    _logger.LogWarning("BePaid webhook rejected: missing X-BePaid-Signature header");
+                    return Unauthorized(new { error = "missing_signature" });
+                }
+
+                using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(webhookSecret));
+                var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(json));
+                var expected = Convert.ToHexString(hash).ToLowerInvariant();
+                if (!string.Equals(expected, sig.ToString().ToLowerInvariant(), StringComparison.Ordinal))
+                {
+                    _logger.LogWarning("BePaid webhook rejected: invalid signature");
+                    return Unauthorized(new { error = "invalid_signature" });
+                }
+            }
+            else
+            {
+                _logger.LogWarning("BePaid:WebhookSecret is not configured; webhook is processed without signature validation");
+            }
 
             await _mediator.Send(new UpdateTransactionStatusCommand(json));
 

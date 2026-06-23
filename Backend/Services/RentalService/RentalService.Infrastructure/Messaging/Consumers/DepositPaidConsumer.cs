@@ -173,13 +173,24 @@ public class DepositPaidConsumer(
             return;
         }
 
-        var externalTransactionId = msg.PaymentTypeName switch
+        // Если payment-service прислал конкретный TransactionId, используем его
+        // (это обеспечивает идемпотентность при повторных webhook и уникальность для
+        // нескольких оплат одного типа на одной аренде).
+        string externalTransactionId;
+        if (msg.TransactionId.HasValue && msg.TransactionId.Value != Guid.Empty)
         {
-            "Fine" => $"fine-{msg.RentalId:D}",
-            "Additional" => $"renewal-{msg.RentalId:D}",
-            "FullPayment" => $"fullpayment-{msg.RentalId:D}",
-            _ => $"deposit-{msg.RentalId:D}",
-        };
+            externalTransactionId = $"tx-{msg.TransactionId.Value:D}";
+        }
+        else
+        {
+            externalTransactionId = msg.PaymentTypeName switch
+            {
+                "Fine" => $"fine-{msg.RentalId:D}",
+                "Additional" => $"renewal-{msg.RentalId:D}",
+                "FullPayment" => $"fullpayment-{msg.RentalId:D}",
+                _ => $"deposit-{msg.RentalId:D}",
+            };
+        }
 
         if (payment.Transactions.Any(t => t.ExternalTransactionId == externalTransactionId))
         {

@@ -12,8 +12,6 @@ public class UserMappingProfile : Profile
     public UserMappingProfile()
     {
         CreateMap<User, UserResponse>()
-            .ForMember(dest => dest.Password,
-                opt => opt.MapFrom(src => src.Password.Hash))
             .ForMember(dest => dest.Email,
                 opt => opt.MapFrom(src => src.Email.Value))
             .ForMember(dest => dest.PhoneNumber,

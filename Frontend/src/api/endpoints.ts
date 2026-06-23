@@ -197,8 +197,8 @@ export const contractApi = {
   sign: (data: SignContractRequest) =>
     apiClient.put('/Contract/sign-contract', data).then((r) => r.data),
 
-  cancel: (contractId: string) =>
-    apiClient.put('/Contract/cancel-contract', { contractId }).then((r) => r.data),
+  cancel: (contractId: string, reason?: string | null) =>
+    apiClient.put('/Contract/cancel-contract', { contractId, reason: reason ?? null }).then((r) => r.data),
 
   changeStatus: (data: ChangeContractStatusRequest) =>
     apiClient.put('/Contract/change-status', data).then((r) => r.data),

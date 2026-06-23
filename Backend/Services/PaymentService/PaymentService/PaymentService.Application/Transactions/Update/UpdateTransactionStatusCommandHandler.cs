@@ -42,8 +42,15 @@ namespace PaymentService.Application.Transactions.Update
 
             var transaction = await _unitOfWork.Transactions.GetByTrackingIdAsync(notification.Transaction.TrakingId);
 
+            if (transaction is null && !string.IsNullOrWhiteSpace(notification.Transaction.Uid))
+                transaction = await _unitOfWork.Transactions.GetByExternalTokenAsync(notification.Transaction.Uid!);
+
             if (transaction is null)
-                throw new ArgumentNullException("Transaction was not found");
+            {
+                _logger.LogWarning("BePaid webhook could not resolve transaction by tracking_id={TrackingId} or uid={Uid}",
+                    notification.Transaction.TrakingId, notification.Transaction.Uid);
+                return;
+            }
 
             var alreadyConfirmed = transaction.Status == Status.Success;
             transaction.ConfirmSuccess(notification.Transaction.ReceiptUrl);
@@ -63,14 +70,14 @@ namespace PaymentService.Application.Transactions.Update
                     _logger.LogInformation("Publishing DepositPaidIntegrationEvent for Rental {RentalId} via webhook, Type: {Type}, Amount: {Amount}",
                         transaction.RentalId, transaction.PaymentType.Name, transaction.Amount);
                     await _publishEndpoint.Publish(new DepositPaidIntegrationEvent(
-                        transaction.RentalId, DateTime.UtcNow, transaction.PaymentType.Name, transaction.Amount), cancellationToken);
+                        transaction.RentalId, DateTime.UtcNow, transaction.PaymentType.Name, transaction.Amount, transaction.Id), cancellationToken);
                     break;
 
                 case var _ when transaction.PaymentType == Domain.ValueObjects.PaymentType.Fine:
                     _logger.LogInformation("Publishing FinePaidIntegrationEvent for Rental {RentalId} via webhook, Amount: {Amount}",
                         transaction.RentalId, transaction.Amount);
                     await _publishEndpoint.Publish(new DepositPaidIntegrationEvent(
-                        transaction.RentalId, DateTime.UtcNow, Domain.ValueObjects.PaymentType.Fine.Name, transaction.Amount), cancellationToken);
+                        transaction.RentalId, DateTime.UtcNow, Domain.ValueObjects.PaymentType.Fine.Name, transaction.Amount, transaction.Id), cancellationToken);
                     await _publishEndpoint.Publish(new FinePaidIntegrationEvent(
                         transaction.RentalId, transaction.Id, transaction.Amount, DateTime.UtcNow), cancellationToken);
                     break;
@@ -79,7 +86,7 @@ namespace PaymentService.Application.Transactions.Update
                     _logger.LogInformation("Publishing AdditionalPaidIntegrationEvent for Rental {RentalId} via webhook, Amount: {Amount}",
                         transaction.RentalId, transaction.Amount);
                     await _publishEndpoint.Publish(new DepositPaidIntegrationEvent(
-                        transaction.RentalId, DateTime.UtcNow, Domain.ValueObjects.PaymentType.Additional.Name, transaction.Amount), cancellationToken);
+                        transaction.RentalId, DateTime.UtcNow, Domain.ValueObjects.PaymentType.Additional.Name, transaction.Amount, transaction.Id), cancellationToken);
                     await _publishEndpoint.Publish(new AdditionalPaidIntegrationEvent(
                         transaction.RentalId, transaction.Id, transaction.Amount, DateTime.UtcNow), cancellationToken);
                     break;
