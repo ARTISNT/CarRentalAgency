@@ -122,7 +122,21 @@ public sealed class Car : Entity, IAggregateRoot
 
     public void MarkAsReturned()
     {
-        EnsureStatusIs(AvailabilityStatus.Rented);
+        if (Status == AvailabilityStatus.Returned)
+            return;
+
+        if (Status != AvailabilityStatus.Rented)
+        {
+            // Идемпотентно принимаем событие завершения аренды из любого состояния,
+            // кроме явно терминальных (Maintenance/Repair ожидают ручной обработки).
+            // Чтобы не терять события, если машина уже Returned — ничего не делаем.
+            if (Status == AvailabilityStatus.Available
+                || Status == AvailabilityStatus.Maintenance
+                || Status == AvailabilityStatus.Broken)
+            {
+                return;
+            }
+        }
 
         ChangeStatus(AvailabilityStatus.Returned);
         CurrentRenterId = null;

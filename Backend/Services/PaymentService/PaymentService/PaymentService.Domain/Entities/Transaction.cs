@@ -9,6 +9,7 @@ namespace PaymentService.Domain.Entities
         public PaymentType PaymentType { get; private set; } = default!;
         public decimal Amount { get; private set; }
         public string ExternalToken { get; private set; } = default!;
+        public string? TrackingId { get; private set; }
         public Guid RentalId { get; private set; }
         public Guid PaymentId { get; private set; }
         public PaymentMethod? PaymentMethod { get; private set; }
@@ -20,12 +21,13 @@ namespace PaymentService.Domain.Entities
 
         private Transaction() { }
 
-        public Transaction(decimal amount, string externalToken, Guid paymentId, Guid rentalId, PaymentType paymentType, string? description = null)
+        public Transaction(decimal amount, string externalToken, Guid paymentId, Guid rentalId, PaymentType paymentType, string? description = null, string? trackingId = null)
         {
             Status = Status.Pending;
             PaymentType = paymentType;
             Amount = amount;
             ExternalToken = externalToken;
+            TrackingId = trackingId;
             RentalId = rentalId;
             PaymentId = paymentId;
             IsRefunded = false;

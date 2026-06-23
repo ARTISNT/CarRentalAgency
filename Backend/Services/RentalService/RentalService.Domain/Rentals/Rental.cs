@@ -17,6 +17,8 @@ public class Rental : Entity, IAggregateRoot
     public DateTime? DepositPaidAt { get; private set; }
     public DateTime? ReturnRequestedAtUtc { get; private set; }
     public DateTime? DepositRefundedAt { get; private set; }
+    public DateTime? CancelledAtUtc { get; private set; }
+    public string? CancellationReason { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
     public string? PromoCode { get; private set; }
     public RentCarSnapshot RentCarSnapshot { get; }
@@ -206,10 +208,12 @@ public class Rental : Entity, IAggregateRoot
                 "Cancellation date cannot be greater than rental start date");
 
         ActivityStatus = RentActivityStatus.Cancelled;
+        CancelledAtUtc = cancelledAt;
+        CancellationReason = reason;
 
         AddDomainEvent(
             new RentCancelledDomainEvent(Id, cancelledAt, DateTime.UtcNow, reason));
-    }    
+    }
     
     public void AttachPayment(Guid paymentId)
     {

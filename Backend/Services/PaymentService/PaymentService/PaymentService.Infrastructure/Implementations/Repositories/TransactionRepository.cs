@@ -80,7 +80,8 @@ namespace PaymentService.Infrastructure.Implementations.Repositories
                 return null;
 
             return await _paymentContext.Transactions
-                .FirstOrDefaultAsync(t => t.ExternalToken == trackingId);
+                .OrderByDescending(t => t.CreatedAt)
+                .FirstOrDefaultAsync(t => t.TrackingId == trackingId);
         }
         public async Task DeleteAsync(Transaction transaction)
         {

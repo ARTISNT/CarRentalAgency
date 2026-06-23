@@ -41,6 +41,7 @@ public class CarConfiguration : IEntityTypeConfiguration<Car>
                 lp.Property(x => x.Value)
                     .HasColumnName("license_plate")
                     .IsRequired();
+                lp.HasIndex(x => x.Value).IsUnique();
             });
 
         builder.OwnsOne(x => x.VinCode,
@@ -49,6 +50,7 @@ public class CarConfiguration : IEntityTypeConfiguration<Car>
                 vin.Property(x => x.Value)
                     .HasColumnName("vin_code")
                     .IsRequired();
+                vin.HasIndex(x => x.Value).IsUnique();
             });
 
         builder.OwnsOne(x => x.Color,
